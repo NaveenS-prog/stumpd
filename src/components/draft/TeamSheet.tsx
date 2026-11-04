@@ -1,5 +1,6 @@
 import { SlotDefinition } from '../../types/game';
 import { Player } from '../../types/player';
+import { getActiveSynergies } from '../../data/synergies';
 
 interface TeamSheetProps {
   slots: SlotDefinition[];
@@ -19,6 +20,7 @@ export const TeamSheet: React.FC<TeamSheetProps> = ({
   onOpenReorder,
 }) => {
   const isComplete = picks.length === slots.length;
+  const activeSynergies = getActiveSynergies(picks);
 
   return (
     <div className="w-full bg-[#12261E] border border-[#1F3F32] rounded-2xl p-4 sm:p-5 shadow-2xl">
@@ -43,6 +45,30 @@ export const TeamSheet: React.FC<TeamSheetProps> = ({
         )}
       </div>
 
+      {activeSynergies.length > 0 && (
+        <div className="mb-3 space-y-1.5">
+          <div className="flex items-center gap-1.5 text-[11px] font-mono font-bold text-amber-400 uppercase tracking-wider">
+            <span>✨ Active Chemistry Synergies ({activeSynergies.length})</span>
+          </div>
+          <div className="space-y-1">
+            {activeSynergies.map((syn) => (
+              <div
+                key={syn.id}
+                className="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-500/20 via-emerald-500/10 to-transparent border border-amber-400/40 flex items-center justify-between text-xs"
+              >
+                <span className="font-bold text-amber-300 flex items-center gap-1">
+                  <span>🤝</span> {syn.name}
+                </span>
+                <span className="text-[10px] font-mono text-emerald-300 font-semibold">
+                  {syn.battingBoost ? `+${Math.round(syn.battingBoost * 100)}% Bat ` : ''}
+                  {syn.bowlingBoost ? `+${Math.round(syn.bowlingBoost * 100)}% Bowl` : ''}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="space-y-1.5">
         {slots.map((slot, idx) => {
           const pickedPlayer = picks[idx];
@@ -64,6 +90,11 @@ export const TeamSheet: React.FC<TeamSheetProps> = ({
                       <span className="font-bold text-white truncate">
                         {pickedPlayer.name}
                       </span>
+                      {pickedPlayer.trait && (
+                        <span className="px-1 rounded bg-amber-400/20 text-amber-300 border border-amber-400/40 text-[9px] font-mono">
+                          ⚡ {pickedPlayer.trait.name}
+                        </span>
+                      )}
                       {isCaptain && (
                         <span className="px-1 rounded bg-gold-400 text-turf-950 font-black text-[9px] uppercase">
                           C

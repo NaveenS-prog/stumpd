@@ -1,6 +1,7 @@
 import React from 'react';
 import { Player } from '../../types/player';
 import { GameMode } from '../../types/game';
+import { getCandidateSynergyLinks } from '../../data/synergies';
 import { CandidateCard } from './CandidateCard';
 
 interface CandidateListProps {
@@ -8,6 +9,7 @@ interface CandidateListProps {
   onSelectPlayer: (player: Player) => void;
   isSpinning?: boolean;
   gameMode?: GameMode;
+  currentPicks?: Player[];
 }
 
 export const CandidateList: React.FC<CandidateListProps> = ({
@@ -15,6 +17,7 @@ export const CandidateList: React.FC<CandidateListProps> = ({
   onSelectPlayer,
   isSpinning = false,
   gameMode = 'International',
+  currentPicks = [],
 }) => {
   if (isSpinning) {
     return (
@@ -48,14 +51,18 @@ export const CandidateList: React.FC<CandidateListProps> = ({
       </div>
 
       <div className="space-y-2">
-        {candidates.map((player) => (
-          <CandidateCard
-            key={player.id}
-            player={player}
-            onSelect={onSelectPlayer}
-            gameMode={gameMode}
-          />
-        ))}
+        {candidates.map((player) => {
+          const links = getCandidateSynergyLinks(player, currentPicks);
+          return (
+            <CandidateCard
+              key={player.id}
+              player={player}
+              onSelect={onSelectPlayer}
+              gameMode={gameMode}
+              synergyLinks={links}
+            />
+          );
+        })}
       </div>
     </div>
   );

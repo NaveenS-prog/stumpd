@@ -7,6 +7,11 @@ interface CandidateCardProps {
   onSelect: (player: Player) => void;
   disabled?: boolean;
   gameMode?: GameMode;
+  synergyLinks?: {
+    synergy: { id: string; name: string };
+    willComplete: boolean;
+    activePartners: string[];
+  }[];
 }
 
 function getRoleBadge(role: PlayerRole): string {
@@ -36,6 +41,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
   onSelect,
   disabled = false,
   gameMode = 'International',
+  synergyLinks = [],
 }) => {
   const isIPL = gameMode === 'IPL';
 
@@ -54,6 +60,29 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
           >
             {player.primaryRole}
           </span>
+
+          {player.trait && (
+            <span
+              className="text-[10px] font-bold px-2 py-0.5 rounded border uppercase font-mono bg-amber-400/20 text-amber-300 border-amber-400/40 flex items-center gap-1"
+              title={`${player.trait.name}: ${player.trait.description}`}
+            >
+              <span>⚡</span> {player.trait.name}
+            </span>
+          )}
+
+          {synergyLinks.map((link, idx) => (
+            <span
+              key={idx}
+              className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase font-mono flex items-center gap-1 ${
+                link.willComplete
+                  ? 'bg-amber-400 text-black border-amber-300 animate-pulse'
+                  : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+              }`}
+              title={`Synergy partner of ${link.activePartners.join(', ')}`}
+            >
+              <span>✨</span> {link.willComplete ? 'Synergy Complete' : 'Synergy Link'}: {link.synergy.name}
+            </span>
+          ))}
 
           {isIPL ? (
             <>

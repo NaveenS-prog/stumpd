@@ -90,4 +90,28 @@ describe('Draft UI Components', () => {
     const captainBtns = screen.getAllByRole('button', { name: /captain/i });
     expect(captainBtns.length).toBeGreaterThanOrEqual(1);
   });
+
+  it('renders candidate card with signature trait badge when present', () => {
+    const kohliWithTrait = playersData.find((p) => p.id === 'virat-kohli') as Player;
+    render(<CandidateCard player={kohliWithTrait} onSelect={vi.fn()} />);
+
+    expect(screen.getByText(/Chase Master/i)).toBeDefined();
+  });
+
+  it('displays active chemistry synergies in team sheet when duo is assembled', () => {
+    const kohli = playersData.find((p) => p.id === 'virat-kohli') as Player;
+    const abd = playersData.find((p) => p.id === 'ab-de-villiers') as Player;
+
+    render(
+      <TeamSheet
+        slots={SLOTS}
+        picks={[kohli, abd]}
+        currentSlotIndex={2}
+        captainId={kohli.id}
+        onSelectCaptain={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText(/RCB Dynamic Duo/i)).toBeDefined();
+  });
 });

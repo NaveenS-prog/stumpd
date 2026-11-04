@@ -8,6 +8,12 @@ interface SpinWheelsProps {
   isSpinning: boolean;
   mulligansRemaining: number;
   gameMode?: GameMode;
+  fixtureInfo?: {
+    opponentName: string;
+    venueName: string;
+    pitchType: string;
+    pitchDescription?: string;
+  };
   onSpin: () => void;
   onMulligan: () => void;
   disableMulligan?: boolean;
@@ -19,6 +25,7 @@ export const SpinWheels: React.FC<SpinWheelsProps> = ({
   isSpinning,
   mulligansRemaining,
   gameMode = 'International',
+  fixtureInfo,
   onSpin,
   onMulligan,
   disableMulligan = false,
@@ -28,6 +35,19 @@ export const SpinWheels: React.FC<SpinWheelsProps> = ({
 
   return (
     <div className="w-full bg-[#12261E] border border-[#1F3F32] rounded-2xl p-4 sm:p-5 shadow-2xl mb-5">
+      {fixtureInfo && (
+        <div className="mb-4 px-3 py-2 rounded-xl bg-[#0A1813]/90 border border-emerald-800/60 flex items-center justify-between text-xs flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-amber-400 font-bold">🏟️ Target Fixture:</span>
+            <span className="text-white font-semibold">{fixtureInfo.opponentName}</span>
+            <span className="text-turf-400">@ {fixtureInfo.venueName}</span>
+          </div>
+          <span className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 font-mono text-[10px] border border-emerald-700/50">
+            {fixtureInfo.pitchType}
+          </span>
+        </div>
+      )}
+
       {/* Wheels Row */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4">
         {/* Team / Franchise Reel */}

@@ -83,4 +83,61 @@ export const VENUES: Venue[] = [
       description: 'Championship grand stage testing clutch nerves and tactical depth',
     },
   },
+  {
+    id: 'premadasa',
+    name: 'R. Premadasa Stadium',
+    city: 'Colombo',
+    country: 'Sri Lanka',
+    pitchType: 'Dustbowl',
+    pitchDescription: 'Humid, turning track that rewards subtle flight and gripping variations.',
+    modifier: {
+      spinBoost: 0.15,
+      description: '+15% Spin bowler rating boost in humid subcontinent heat',
+    },
+  },
+  {
+    id: 'edgbaston',
+    name: 'Edgbaston Cricket Ground',
+    city: 'Birmingham',
+    country: 'England',
+    pitchType: 'SportingBalanced',
+    pitchDescription: 'Atmospheric cauldron with fair balance between aggressive strokeplay and swing.',
+    modifier: {
+      description: 'Dynamic English wicket rewarding proactive shotmaking',
+    },
+  },
+  {
+    id: 'eden_gardens',
+    name: 'Eden Gardens',
+    city: 'Kolkata',
+    country: 'India',
+    pitchType: 'SportingBalanced',
+    pitchDescription: 'Colosseum of Indian cricket with true bounce, high pace value, and sharp turn late.',
+    modifier: {
+      battingBoost: 0.10,
+      description: '+10% Batting boost for fearless strokeplay in front of 66,000 fans',
+    },
+  },
+  {
+    id: 'sawai_mansingh',
+    name: 'Sawai Mansingh Stadium',
+    city: 'Jaipur',
+    country: 'India',
+    pitchType: 'SportingBalanced',
+    pitchDescription: 'Expansive outfield and two-paced wicket requiring tactical running and discipline.',
+    modifier: {
+      description: 'Sprawling boundaries testing stamina and shot placement',
+    },
+  },
+  {
+    id: 'narendra_modi',
+    name: 'Narendra Modi Stadium',
+    city: 'Ahmedabad',
+    country: 'India',
+    pitchType: 'SportingBalanced',
+    pitchDescription: 'Massive world-record amphitheatre featuring dependable carry and big boundary dimensions.',
+    modifier: {
+      description: 'Grand venue testing composure in high-stakes pressure situations',
+    },
+  },
 ];

@@ -50,21 +50,21 @@ export default function App() {
   const currentVenue = VENUES[currentMatchIndex % VENUES.length];
 
   return (
-    <div className="min-h-screen bg-turf-950 text-white flex flex-col justify-between selection:bg-gold-400 selection:text-turf-950">
-      {/* Top Persistent Navigation Bar */}
-      <header className="sticky top-0 z-40 bg-turf-950/90 backdrop-blur-md border-b border-turf-800/80 px-4 py-3">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
+    <div className="min-h-screen bg-[#07110D] text-[#F0FDF4] flex flex-col justify-between selection:bg-gold-400 selection:text-turf-950 font-sans">
+      {/* Top Navigation */}
+      <header className="sticky top-0 z-40 bg-[#0A1813]/95 backdrop-blur-md border-b border-[#1F3F32] px-4 py-3">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
           <button
             type="button"
             onClick={resetGame}
-            className="flex items-center gap-2 group text-left"
+            className="flex items-center gap-2 text-left group"
           >
-            <span className="text-2xl group-hover:scale-110 transition-transform">🏏</span>
+            <span className="text-2xl">🏏</span>
             <div>
-              <span className="text-lg font-black tracking-wider text-white font-mono leading-none block">
+              <span className="text-xl font-black tracking-tight text-white font-mono leading-none block">
                 STUMPD<span className="text-gold-400">.</span>
               </span>
-              <span className="text-[10px] text-turf-400 font-sans uppercase tracking-wider">
+              <span className="text-[10px] text-turf-400 uppercase tracking-widest font-mono">
                 {screen !== 'home' ? gameMode : 'Cricket Strategy'}
               </span>
             </div>
@@ -74,8 +74,8 @@ export default function App() {
             <button
               type="button"
               onClick={toggleMute}
-              className="p-2 rounded-lg bg-turf-900 border border-turf-700 hover:border-gold-400/50 text-xs text-turf-300 hover:text-white transition-all"
-              title={isMuted ? 'Unmute Sound FX' : 'Mute Sound FX'}
+              className="p-2 rounded-lg bg-[#12261E] border border-[#1F3F32] hover:border-gold-400/50 text-xs text-turf-300 hover:text-white transition-all"
+              title={isMuted ? 'Unmute Sound' : 'Mute Sound'}
               aria-label="Toggle Sound"
             >
               {isMuted ? '🔇' : '🔊'}
@@ -85,17 +85,17 @@ export default function App() {
               <button
                 type="button"
                 onClick={resetGame}
-                className="py-1.5 px-3 rounded-lg bg-turf-900 hover:bg-turf-800 border border-turf-700 text-xs font-mono text-turf-300 hover:text-white transition-all"
+                className="py-1.5 px-3 rounded-lg bg-[#12261E] hover:bg-[#1A382C] border border-[#1F3F32] text-xs font-mono text-turf-300 hover:text-white transition-all"
               >
-                Exit to Home
+                Quit to Home
               </button>
             )}
           </div>
         </div>
       </header>
 
-      {/* Main App Body */}
-      <main className="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6">
+      {/* Main Body Container */}
+      <main className="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-6">
         {screen === 'home' && (
           <HomeScreen
             onStartGame={startMode}
@@ -114,9 +114,9 @@ export default function App() {
               picks={picks}
             />
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              {/* Left Column: Spin Controls & Candidates (7 cols on desktop) */}
-              <div className="lg:col-span-7 space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6">
+              {/* Left Column: Spin Wheels & Candidates */}
+              <div className="lg:col-span-7">
                 {picks.length < SLOTS.length ? (
                   <>
                     <SpinWheels
@@ -136,19 +136,19 @@ export default function App() {
                     />
                   </>
                 ) : (
-                  <div className="bg-turf-900 border border-gold-400/50 rounded-2xl p-8 text-center shadow-2xl">
-                    <div className="text-5xl mb-3">🏏</div>
-                    <h3 className="text-2xl font-black text-white uppercase font-mono">
-                      Drafting Complete!
+                  <div className="bg-[#12261E] border border-gold-400/50 rounded-2xl p-6 sm:p-8 text-center shadow-2xl mb-6">
+                    <div className="text-4xl mb-2">🏆</div>
+                    <h3 className="text-xl sm:text-2xl font-black text-white uppercase font-mono">
+                      Playing XI Complete!
                     </h3>
-                    <p className="text-sm text-turf-300 mt-2 max-w-md mx-auto">
-                      All 11 positions have been filled. Finalize your batting order and lead your squad into the tournament gauntlet.
+                    <p className="text-xs sm:text-sm text-turf-300 mt-1 max-w-md mx-auto">
+                      All 11 slots are drafted. Check your batting order and lead your team into the 7-match tournament gauntlet.
                     </p>
-                    <div className="mt-6 flex flex-wrap justify-center gap-3">
+                    <div className="mt-5 flex flex-wrap justify-center gap-3">
                       <button
                         type="button"
                         onClick={() => setIsReorderModalOpen(true)}
-                        className="py-3 px-5 rounded-xl bg-turf-800 hover:bg-turf-700 border border-turf-600 text-white font-bold text-xs uppercase tracking-wider transition-all"
+                        className="py-2.5 px-4 rounded-xl bg-[#0A1813] hover:bg-[#152e24] border border-[#1F3F32] text-white font-bold text-xs uppercase tracking-wider transition-all"
                       >
                         Adjust Lineup &amp; Captain
                       </button>
@@ -164,7 +164,7 @@ export default function App() {
                 )}
               </div>
 
-              {/* Right Column: 11-Slot Team Sheet (5 cols on desktop) */}
+              {/* Right Column: Starting XI Team Sheet */}
               <div className="lg:col-span-5">
                 <TeamSheet
                   slots={SLOTS}
@@ -216,10 +216,10 @@ export default function App() {
         )}
       </main>
 
-      {/* Persistent Footer */}
-      <footer className="bg-turf-950 border-t border-turf-900 py-4 px-4 text-center">
-        <p className="text-xs font-mono text-turf-500">
-          STUMPD. • Tactical Cricket XI Drafting &amp; Tournament Gauntlet • 500+ Legends
+      {/* Footer */}
+      <footer className="bg-[#0A1813] border-t border-[#1F3F32] py-3 px-4 text-center">
+        <p className="text-[11px] font-mono text-turf-500">
+          STUMPD. • Cricket XI Drafting &amp; Tournament Strategy • 697 Legends
         </p>
       </footer>
     </div>

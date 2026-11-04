@@ -1,4 +1,3 @@
-import React from 'react';
 import { Player } from '../../types/player';
 import { CandidateCard } from './CandidateCard';
 
@@ -15,10 +14,9 @@ export const CandidateList: React.FC<CandidateListProps> = ({
 }) => {
   if (isSpinning) {
     return (
-      <div className="w-full py-12 flex flex-col items-center justify-center bg-turf-900/50 border border-turf-800 rounded-xl">
-        <div className="w-10 h-10 border-4 border-gold-400 border-t-transparent rounded-full animate-spin mb-3" />
-        <p className="text-sm font-mono text-gold-300 uppercase tracking-widest animate-pulse">
-          Spinning Reels... Scouting Candidates
+      <div className="w-full py-8 px-4 text-center bg-[#0A1813] border border-[#1F3F32] rounded-xl mb-6">
+        <p className="text-xs font-mono text-gold-400 uppercase tracking-widest animate-pulse">
+          ⚡ Spinning reels... scouting cricketers
         </p>
       </div>
     );
@@ -26,24 +24,26 @@ export const CandidateList: React.FC<CandidateListProps> = ({
 
   if (candidates.length === 0) {
     return (
-      <div className="w-full py-12 text-center bg-turf-900/50 border border-turf-800 rounded-xl">
-        <p className="text-turf-400 text-sm">
-          No candidates available. Spin the reels or use a mulligan!
+      <div className="w-full py-8 px-4 text-center bg-[#0A1813] border border-[#1F3F32] rounded-xl mb-6">
+        <p className="text-xs text-turf-400 font-mono">
+          Spin the reels above to discover eligible cricketers for this slot.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="w-full">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-mono font-bold uppercase tracking-wider text-turf-200">
+    <div className="w-full mb-6">
+      <div className="flex items-center justify-between mb-2.5">
+        <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-turf-300">
           Available Candidates ({candidates.length})
-        </h3>
-        <span className="text-xs text-turf-400">Select 1 player to fill the slot</span>
+        </span>
+        <span className="text-[10px] text-turf-400 font-mono">
+          Tap player to draft into XI
+        </span>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="space-y-2">
         {candidates.map((player) => (
           <CandidateCard
             key={player.id}

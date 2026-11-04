@@ -16,6 +16,8 @@ import {
   StoredGameStats,
 } from '../utils/storage';
 import { soundEngine } from '../engine/audio';
+import { TEAMS } from '../data/teams';
+import { ERAS } from '../engine/draftMachine';
 
 export function useStumpdGame() {
   const [screen, setScreen] = useState<GamePhase>('home');
@@ -41,7 +43,6 @@ export function useStumpdGame() {
 
   const dailyRngRef = useRef<(() => number) | null>(null);
 
-  // Sync stats and mute on mount
   useEffect(() => {
     setStats(getGameStats());
     setIsDailyLocked(isDailyCompletedToday());
@@ -55,78 +56,109 @@ export function useStumpdGame() {
     return Math.random;
   }, []);
 
-  const spinReelsForSlot = useCallback(
+  const executeSpin = useCallback(
     (slotIdx: number, existingPicks: Player[]) => {
-      setIsSpinning(true);
-      soundEngine.playReelTick(1.2);
-
       const rng = getRng();
       const slotDef = SLOTS[slotIdx] || SLOTS[0];
-      const spin = draftMachine.spinSlotReels(slotIdx, rng);
 
-      setCurrentTeam(spin.team);
-      setCurrentEra(spin.era);
+      // In test runner or non-browser environments, resolve synchronously
+      const isTestEnv =
+        typeof process !== 'undefined' &&
+        (process.env.NODE_ENV === 'test' || process.env.VITEST === 'true');
 
-      const eligible = draftMachine.getCandidatesForSlot(
-        slotDef,
-        spin.team,
-        spin.era,
-        existingPicks
-      );
+      if (isTestEnv) {
+        const spin = draftMachine.spinSlotReels(slotIdx, rng);
+        setCurrentTeam(spin.team);
+        setCurrentEra(spin.era);
 
-      // Offer up to 4 candidates
-      const chosenCandidates = eligible.slice(0, 4);
-      setCurrentCandidates(chosenCandidates);
-      setIsSpinning(false);
+        const eligible = draftMachine.getCandidatesForSlot(
+          slotDef,
+          spin.team,
+          spin.era,
+          existingPicks
+        );
+        setCurrentCandidates(eligible.slice(0, 4));
+        setIsSpinning(false);
+        return;
+      }
+
+      // In browser: rapid exciting tactile reel ticks
+      setIsSpinning(true);
+      let tickCount = 0;
+      const interval = setInterval(() => {
+        tickCount++;
+        soundEngine.playReelTick(0.9 + tickCount * 0.08);
+
+        const randomTeam = TEAMS[Math.floor(Math.random() * TEAMS.length)].id;
+        const randomEra = ERAS[Math.floor(Math.random() * ERAS.length)];
+        setCurrentTeam(randomTeam);
+        setCurrentEra(randomEra);
+
+        if (tickCount >= 6) {
+          clearInterval(interval);
+          const spin = draftMachine.spinSlotReels(slotIdx, rng);
+          setCurrentTeam(spin.team);
+          setCurrentEra(spin.era);
+
+          const eligible = draftMachine.getCandidatesForSlot(
+            slotDef,
+            spin.team,
+            spin.era,
+            existingPicks
+          );
+          setCurrentCandidates(eligible.slice(0, 4));
+          setIsSpinning(false);
+        }
+      }, 55);
     },
     [getRng]
   );
 
-  const startMode = useCallback(
-    (modeInput: string) => {
-      let resolvedMode: GameMode = 'Spin Mode';
-      let mulligans = 3;
+  const startMode = useCallback((modeInput: string) => {
+    let resolvedMode: GameMode = 'Spin Mode';
+    let mulligans = 3;
 
-      if (modeInput.toLowerCase().includes('daily')) {
-        resolvedMode = 'Daily Stumpd';
-        mulligans = 0;
-        const seed = getDailySeed();
-        dailyRngRef.current = createSeededRandom(seed);
-      } else if (modeInput.toLowerCase().includes('practice')) {
-        resolvedMode = 'Practice Mode';
-        mulligans = 99;
-        dailyRngRef.current = null;
-      } else {
-        resolvedMode = 'Spin Mode';
-        mulligans = 3;
-        dailyRngRef.current = null;
-      }
+    if (modeInput.toLowerCase().includes('daily')) {
+      resolvedMode = 'Daily Stumpd';
+      mulligans = 0;
+      const seed = getDailySeed();
+      dailyRngRef.current = createSeededRandom(seed);
+    } else if (modeInput.toLowerCase().includes('practice')) {
+      resolvedMode = 'Practice Mode';
+      mulligans = 99;
+      dailyRngRef.current = null;
+    } else {
+      resolvedMode = 'Spin Mode';
+      mulligans = 3;
+      dailyRngRef.current = null;
+    }
 
-      setGameMode(resolvedMode);
-      setScreen('draft');
-      setCurrentSlotIndex(0);
-      setPicks([]);
-      setCaptainId(null);
-      setMulligansRemaining(mulligans);
-      setMatchResults([]);
-      setLastResult(null);
-      setCurrentMatchIndex(0);
+    setGameMode(resolvedMode);
+    setScreen('draft');
+    setCurrentSlotIndex(0);
+    setPicks([]);
+    setCaptainId(null);
+    setMulligansRemaining(mulligans);
+    setMatchResults([]);
+    setLastResult(null);
+    setCurrentMatchIndex(0);
 
-      // Initial roll for slot 0
-      spinReelsForSlot(0, []);
-    },
-    [spinReelsForSlot]
-  );
+    // Reset reels so user spins for slot 0 explicitly!
+    setCurrentTeam(null);
+    setCurrentEra(null);
+    setCurrentCandidates([]);
+    setIsSpinning(false);
+  }, []);
 
   const spinReels = useCallback(() => {
-    spinReelsForSlot(currentSlotIndex, picks);
-  }, [currentSlotIndex, picks, spinReelsForSlot]);
+    executeSpin(currentSlotIndex, picks);
+  }, [currentSlotIndex, executeSpin, picks]);
 
   const mulligan = useCallback(() => {
     if (mulligansRemaining <= 0) return;
     setMulligansRemaining((prev) => Math.max(0, prev - 1));
-    spinReelsForSlot(currentSlotIndex, picks);
-  }, [currentSlotIndex, mulligansRemaining, picks, spinReelsForSlot]);
+    executeSpin(currentSlotIndex, picks);
+  }, [currentSlotIndex, executeSpin, mulligansRemaining, picks]);
 
   const draftPlayer = useCallback(
     (player: Player) => {
@@ -140,12 +172,15 @@ export function useStumpdGame() {
       }
 
       const nextSlot = currentSlotIndex + 1;
-      if (nextSlot < SLOTS.length) {
-        setCurrentSlotIndex(nextSlot);
-        spinReelsForSlot(nextSlot, nextPicks);
-      }
+      setCurrentSlotIndex(nextSlot);
+
+      // Reset wheels and candidates for the next slot!
+      setCurrentTeam(null);
+      setCurrentEra(null);
+      setCurrentCandidates([]);
+      setIsSpinning(false);
     },
-    [captainId, currentSlotIndex, picks, spinReelsForSlot]
+    [captainId, currentSlotIndex, picks]
   );
 
   const setCaptain = useCallback((playerId: string) => {
@@ -189,7 +224,6 @@ export function useStumpdGame() {
     if (lastResult.won) {
       const nextIdx = currentMatchIndex + 1;
       if (nextIdx >= OPPONENTS.length) {
-        // Tournament completed with clean sweep!
         if (gameMode === 'Daily Stumpd') {
           markDailyCompletedToday({ won: true, matchesWon: 7 });
           setIsDailyLocked(true);
@@ -203,7 +237,6 @@ export function useStumpdGame() {
         setLastResult(null);
       }
     } else {
-      // Knockout defeat: Tournament ends
       const winsCount = matchResults.filter((r) => r.won).length;
       if (gameMode === 'Daily Stumpd') {
         markDailyCompletedToday({ won: false, matchesWon: winsCount });
@@ -221,6 +254,10 @@ export function useStumpdGame() {
     setPicks([]);
     setCaptainId(null);
     setCurrentSlotIndex(0);
+    setCurrentTeam(null);
+    setCurrentEra(null);
+    setCurrentCandidates([]);
+    setIsSpinning(false);
     setCurrentMatchIndex(0);
     setMatchResults([]);
     setLastResult(null);

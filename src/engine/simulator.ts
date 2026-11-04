@@ -6,6 +6,7 @@ import {
   PitchAdjustedRatings,
   PlayerPerformance,
 } from '../types/tournament';
+import { getActiveSynergies } from '../data/synergies';
 
 export function isSpinner(player: Player): boolean {
   if (player.primaryRole === 'Spinner') return true;
@@ -31,7 +32,8 @@ export function isPacer(player: Player): boolean {
 export function calculatePitchAdjustedRatings(
   players: Player[],
   venue: Venue,
-  captainId?: string
+  captainId?: string,
+  isChasing?: boolean
 ): PitchAdjustedRatings {
   const battingRatings: Record<string, number> = {};
   const bowlingRatings: Record<string, number> = {};
@@ -40,6 +42,8 @@ export function calculatePitchAdjustedRatings(
   const spinBoost = venue.modifier.spinBoost ?? 0;
   const pacerBoost = venue.modifier.pacerBoost ?? 0;
   const generalBowlingBoost = venue.modifier.bowlingBoost ?? 0;
+
+  const activeSynergies = getActiveSynergies(players);
 
   for (const player of players) {
     let adjBat = player.battingRating * (1 + battingBoost);
@@ -56,6 +60,53 @@ export function calculatePitchAdjustedRatings(
     if (captainId && player.id === captainId) {
       adjBat *= 1.1;
       adjBowl *= 1.1;
+    }
+
+    // Apply Active Synergy Multipliers
+    for (const synergy of activeSynergies) {
+      if (synergy.playerIds.includes(player.id)) {
+        if (synergy.battingBoost) {
+          adjBat *= (1 + synergy.battingBoost);
+        }
+        if (synergy.bowlingBoost) {
+          adjBowl *= (1 + synergy.bowlingBoost);
+        }
+      }
+    }
+
+    // Apply Signature Player Trait Multipliers
+    if (player.trait) {
+      const trait = player.trait;
+      let isTriggered = false;
+
+      switch (trait.trigger) {
+        case 'General':
+        case 'Powerplay':
+        case 'DeathOvers':
+          isTriggered = true;
+          break;
+        case 'Chasing':
+          isTriggered = isChasing !== false;
+          break;
+        case 'SpinPitch':
+          isTriggered = venue.pitchType === 'Dustbowl' || spinBoost > 0;
+          break;
+        case 'PacePitch':
+          isTriggered =
+            venue.pitchType === 'GreenSeamer' ||
+            venue.pitchType === 'ExpressBouncy' ||
+            pacerBoost > 0;
+          break;
+      }
+
+      if (isTriggered) {
+        if (trait.battingBoost) {
+          adjBat *= (1 + trait.battingBoost);
+        }
+        if (trait.bowlingBoost) {
+          adjBowl *= (1 + trait.bowlingBoost);
+        }
+      }
     }
 
     battingRatings[player.id] = Math.round(adjBat * 10) / 10;
@@ -314,6 +365,12 @@ export function simulateMatch(
   const potm = rankedPerformances[0];
   const topPerformers = rankedPerformances.slice(0, 4);
 
+  const activeSynergies = getActiveSynergies(userXI);
+  const activeSynergyNames = activeSynergies.map((s) => s.name);
+  const activeTraitHighlights = userXI
+    .filter((p) => Boolean(p.trait))
+    .map((p) => `${p.name}: ${p.trait!.name} (${p.trait!.description})`);
+
   return {
     won,
     userScore: {
@@ -331,5 +388,7 @@ export function simulateMatch(
     topPerformers,
     userScorecard: userBatting,
     opponentScorecard: oppBatting,
+    activeSynergyNames,
+    activeTraitHighlights,
   };
 }

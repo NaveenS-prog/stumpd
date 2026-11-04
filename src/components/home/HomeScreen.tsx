@@ -24,7 +24,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       {/* Top Bar with Sound Toggle */}
       <div className="flex items-center justify-between py-2 mb-6">
         <span className="text-xs font-mono uppercase text-gold-400 font-bold tracking-widest">
-          Stumpd. Web Edition
+          Stumpd. Dual Tournament Edition
         </span>
         <button
           type="button"
@@ -42,7 +42,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           STUMPD<span className="text-gold-400">.</span>
         </h1>
         <p className="text-sm md:text-base text-turf-300 max-w-lg mx-auto mt-2 leading-relaxed">
-          11-Slot Cricket Drafting & Tactical Tournament Campaign. Spin reels, engineer team balance, and outsmart historic cricket dynasties.
+          11-Slot Cricket Drafting & Tactical Tournament Gauntlet. Choose your ecosystem: conquer world cricket in <strong>International Tour</strong> or dominate the franchise league in <strong>IPL Championship</strong>.
         </p>
 
         {/* Career Stats Bar */}
@@ -82,75 +82,127 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         </div>
       </div>
 
-      {/* Game Mode Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
-        {/* Mode 1: Spin Mode */}
-        <div className="bg-turf-900 border border-turf-700 hover:border-gold-400/70 rounded-2xl p-6 shadow-xl flex flex-col justify-between transition-all duration-200">
+      {/* Primary Championship Tournaments (Featured Cards) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
+        {/* Mode 1: International Tour */}
+        <div className="bg-gradient-to-br from-[#12261E] to-[#0A1813] border-2 border-emerald-500/40 hover:border-emerald-400 rounded-3xl p-6 shadow-xl flex flex-col justify-between transition-all duration-200 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl group-hover:bg-emerald-500/10 transition-all pointer-events-none" />
           <div>
             <div className="flex items-center justify-between mb-3">
-              <span className="text-2xl">🎰</span>
-              <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-gold-400/20 text-gold-300 border border-gold-400/30">
-                Standard
+              <span className="text-3xl">🌍</span>
+              <span className="text-[10px] font-mono font-bold uppercase px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                10 Test Nations • 1980s–Modern
               </span>
             </div>
-            <h3 className="text-xl font-bold text-white mb-2">Spin Mode</h3>
+            <h3 className="text-2xl font-black text-white mb-2 font-mono">
+              International Tour
+            </h3>
             <p className="text-xs text-turf-300 leading-relaxed mb-4">
-              The classic tournament gauntlet. 11 slot constraints, 3 tactical mulligans, and a 7-match campaign against iconic teams.
+              Spin reels for 10 Test Nations &amp; 5 decades of cricket. Draft legends like Viv Richards, Imran Khan, Tendulkar, and Ponting to conquer the 7-match World Gauntlet.
             </p>
+            <div className="flex flex-wrap gap-1.5 mb-5 text-[10px] font-mono text-emerald-400/90">
+              <span className="px-2 py-0.5 rounded bg-[#07110D] border border-emerald-500/20">IND</span>
+              <span className="px-2 py-0.5 rounded bg-[#07110D] border border-emerald-500/20">AUS</span>
+              <span className="px-2 py-0.5 rounded bg-[#07110D] border border-emerald-500/20">ENG</span>
+              <span className="px-2 py-0.5 rounded bg-[#07110D] border border-emerald-500/20">WI</span>
+              <span className="px-2 py-0.5 rounded bg-[#07110D] border border-emerald-500/20">PAK</span>
+              <span className="px-2 py-0.5 rounded bg-[#07110D] border border-emerald-500/20">SA</span>
+              <span className="px-2 py-0.5 rounded bg-[#07110D] border border-emerald-500/20">NZ</span>
+              <span className="px-2 py-0.5 rounded bg-[#07110D] border border-emerald-500/20">SL</span>
+            </div>
           </div>
           <button
             type="button"
-            onClick={() => onStartGame('Spin Mode')}
-            className="w-full py-3 rounded-xl bg-gold-400 hover:bg-gold-300 text-turf-950 font-black text-xs uppercase tracking-wider transition-all shadow-md active:scale-95"
+            onClick={() => onStartGame('International')}
+            className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-turf-950 font-black text-xs uppercase tracking-wider transition-all shadow-lg active:scale-98 flex items-center justify-center gap-2"
           >
-            Play Spin Mode
+            <span>Play International Tour ➔</span>
           </button>
         </div>
 
-        {/* Mode 2: Daily Stumpd */}
-        <div className="bg-turf-900 border border-turf-700 hover:border-gold-400/70 rounded-2xl p-6 shadow-xl flex flex-col justify-between transition-all duration-200">
+        {/* Mode 2: IPL Championship */}
+        <div className="bg-gradient-to-br from-[#1B1E12] to-[#0A1813] border-2 border-gold-400/50 hover:border-gold-300 rounded-3xl p-6 shadow-xl flex flex-col justify-between transition-all duration-200 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gold-400/5 rounded-full blur-2xl group-hover:bg-gold-400/10 transition-all pointer-events-none" />
           <div>
             <div className="flex items-center justify-between mb-3">
-              <span className="text-2xl">📅</span>
-              <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/40">
-                Daily Lock
+              <span className="text-3xl">⚡</span>
+              <span className="text-[10px] font-mono font-bold uppercase px-2.5 py-1 rounded-full bg-gold-400/20 text-gold-300 border border-gold-400/40">
+                10 Franchises • 4 IPL Eras
               </span>
             </div>
-            <h3 className="text-xl font-bold text-white mb-2">Daily Stumpd</h3>
+            <h3 className="text-2xl font-black text-white mb-2 font-mono">
+              IPL Championship
+            </h3>
             <p className="text-xs text-turf-300 leading-relaxed mb-4">
-              Synchronized global seed. Zero mulligans. One shot per day to win the tournament and share your emoji grid.
+              Pure franchise cricket. Spin reels for CSK, MI, RCB, KKR, RR, SRH, DC, PK, LSG, GT and authentic IPL eras (2008–Present). Face 7 legendary champion dynasties.
+            </p>
+            <div className="flex flex-wrap gap-1.5 mb-5 text-[10px] font-mono text-gold-400/90">
+              <span className="px-2 py-0.5 rounded bg-[#07110D] border border-gold-400/20">CSK</span>
+              <span className="px-2 py-0.5 rounded bg-[#07110D] border border-gold-400/20">MI</span>
+              <span className="px-2 py-0.5 rounded bg-[#07110D] border border-gold-400/20">RCB</span>
+              <span className="px-2 py-0.5 rounded bg-[#07110D] border border-gold-400/20">KKR</span>
+              <span className="px-2 py-0.5 rounded bg-[#07110D] border border-gold-400/20">RR</span>
+              <span className="px-2 py-0.5 rounded bg-[#07110D] border border-gold-400/20">SRH</span>
+              <span className="px-2 py-0.5 rounded bg-[#07110D] border border-gold-400/20">DC</span>
+              <span className="px-2 py-0.5 rounded bg-[#07110D] border border-gold-400/20">GT</span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => onStartGame('IPL')}
+            className="w-full py-3.5 rounded-xl bg-gold-400 hover:bg-gold-300 text-turf-950 font-black text-xs uppercase tracking-wider transition-all shadow-lg active:scale-98 flex items-center justify-center gap-2"
+          >
+            <span>Play IPL Championship ➔</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Secondary Modes: Daily Challenge & Sandbox */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+        {/* Mode 3: Daily Stumpd */}
+        <div className="bg-turf-900 border border-turf-700 hover:border-purple-400/70 rounded-2xl p-5 shadow-lg flex items-center justify-between gap-4 transition-all">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xl">📅</span>
+              <h4 className="text-base font-bold text-white font-mono">Daily Stumpd</h4>
+              <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                Daily Seed
+              </span>
+            </div>
+            <p className="text-xs text-turf-300 truncate">
+              Global synchronized daily seed. Zero mulligans. One shot.
             </p>
           </div>
           <button
             type="button"
             disabled={isDailyLocked}
             onClick={() => onStartGame('Daily Stumpd')}
-            className="w-full py-3 rounded-xl bg-purple-500 hover:bg-purple-400 disabled:opacity-40 disabled:cursor-not-allowed text-white font-black text-xs uppercase tracking-wider transition-all shadow-md active:scale-95"
+            className="shrink-0 py-2.5 px-4 rounded-xl bg-purple-500 hover:bg-purple-400 disabled:opacity-40 disabled:cursor-not-allowed text-white font-black text-xs uppercase tracking-wider transition-all shadow-md active:scale-95"
           >
-            {isDailyLocked ? 'Completed Today ✓' : 'Play Daily Stumpd'}
+            {isDailyLocked ? 'Done ✓' : 'Daily'}
           </button>
         </div>
 
-        {/* Mode 3: Practice Mode */}
-        <div className="bg-turf-900 border border-turf-700 hover:border-gold-400/70 rounded-2xl p-6 shadow-xl flex flex-col justify-between transition-all duration-200">
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-2xl">🎯</span>
-              <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/40">
+        {/* Mode 4: Practice Draft */}
+        <div className="bg-turf-900 border border-turf-700 hover:border-blue-400/70 rounded-2xl p-5 shadow-lg flex items-center justify-between gap-4 transition-all">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xl">🎯</span>
+              <h4 className="text-base font-bold text-white font-mono">Practice Draft</h4>
+              <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">
                 Sandbox
               </span>
             </div>
-            <h3 className="text-xl font-bold text-white mb-2">Practice Draft</h3>
-            <p className="text-xs text-turf-300 leading-relaxed mb-4">
-              Unlimited mulligans and casual experimentation. Test team balance synergies and scout the 500+ player roster.
+            <p className="text-xs text-turf-300 truncate">
+              Unlimited mulligans. Experiment with team balance synergies.
             </p>
           </div>
           <button
             type="button"
             onClick={() => onStartGame('Practice Mode')}
-            className="w-full py-3 rounded-xl bg-turf-800 hover:bg-turf-700 text-white font-bold text-xs uppercase tracking-wider border border-turf-600 transition-all shadow-md active:scale-95"
+            className="shrink-0 py-2.5 px-4 rounded-xl bg-turf-800 hover:bg-turf-700 text-white font-bold text-xs uppercase tracking-wider border border-turf-600 transition-all shadow-md active:scale-95"
           >
-            Practice Draft
+            Sandbox
           </button>
         </div>
       </div>
@@ -163,7 +215,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           className="w-full flex items-center justify-between text-left"
         >
           <span className="text-sm font-bold text-white uppercase font-mono">
-            📖 How to Play & Tactical Guide
+            📖 How to Play &amp; Tactical Guide
           </span>
           <span className="text-gold-400 text-sm font-mono font-bold">
             {showRules ? 'Hide ▲' : 'Read ▼'}
@@ -173,16 +225,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         {showRules && (
           <div className="mt-4 pt-4 border-t border-turf-800 space-y-3 text-xs text-turf-300 leading-relaxed">
             <p>
-              <strong className="text-white">1. Slot Constraints:</strong> For each of the 11 positions, the slot reels spin a Country or IPL Franchise and an Era (1980s to 2020s). Only eligible players matching the slot role, team, and era can be drafted.
+              <strong className="text-white">1. Mode Separation:</strong> In <em>International Tour</em>, you draft from 10 Test Nations and 5 historic decades. In <em>IPL Championship</em>, you draft exclusively from cricketers who played for that IPL franchise during that IPL era—no international leakage!
             </p>
             <p>
-              <strong className="text-white">2. Team Balance Bonuses:</strong> A well-balanced cricket team receives up to +11% performance boosts for having at least 1 Wicketkeeper, 1 Spinner, 2 Strike Pacers, and 1 All-rounder.
+              <strong className="text-white">2. Slot Constraints:</strong> For each of the 11 positions, the slot reels spin a Team and Era. Only eligible players matching the slot role, team, and era can be drafted.
             </p>
             <p>
-              <strong className="text-white">3. Pitch Counterplay:</strong> Match venues alter ratings dramatically! Chepauk rewards Spinners (+20%), Lord's rewards Pacers (+20%), and Chinnaswamy boosts Power Hitters (+15%).
+              <strong className="text-white">3. Team Balance Bonuses:</strong> A well-balanced cricket team receives up to +11% performance boosts for having at least 1 Wicketkeeper, 1 Spinner, 2 Strike Pacers, and 1 All-rounder.
             </p>
             <p>
-              <strong className="text-white">4. Captain Bonus:</strong> Designate your team captain to award them a +10% boost to both batting and bowling prowess.
+              <strong className="text-white">4. Pitch Counterplay:</strong> Match venues alter ratings dramatically! Chepauk rewards Spinners (+20%), Lord's rewards Pacers (+20%), and Chinnaswamy boosts Power Hitters (+15%).
+            </p>
+            <p>
+              <strong className="text-white">5. Captain Bonus:</strong> Designate your team captain to award them a +10% boost to both batting and bowling prowess.
             </p>
           </div>
         )}

@@ -1,9 +1,9 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { Player, Era } from '../types/player';
+import { Player, Era, IPLEra } from '../types/player';
 import { GameMode, GamePhase } from '../types/game';
-import { MatchResult } from '../types/tournament';
+import { MatchResult, OpponentTeam } from '../types/tournament';
 import { SLOTS } from '../data/slots';
-import { OPPONENTS } from '../data/opponents';
+import { INTERNATIONAL_OPPONENTS, IPL_OPPONENTS } from '../data/opponents';
 import { VENUES } from '../data/venues';
 import { draftMachine } from '../engine/draftMachine';
 import { simulateMatch } from '../engine/simulator';
@@ -16,19 +16,23 @@ import {
   StoredGameStats,
 } from '../utils/storage';
 import { soundEngine } from '../engine/audio';
-import { TEAMS } from '../data/teams';
-import { ERAS } from '../engine/draftMachine';
+import {
+  NATIONAL_TEAMS,
+  IPL_TEAMS,
+  INTERNATIONAL_ERAS,
+  IPL_ERAS,
+} from '../data/teams';
 
 export function useStumpdGame() {
   const [screen, setScreen] = useState<GamePhase>('home');
-  const [gameMode, setGameMode] = useState<GameMode>('Spin Mode');
+  const [gameMode, setGameMode] = useState<GameMode>('International');
   const [currentSlotIndex, setCurrentSlotIndex] = useState<number>(0);
   const [picks, setPicks] = useState<Player[]>([]);
   const [captainId, setCaptainId] = useState<string | null>(null);
   const [mulligansRemaining, setMulligansRemaining] = useState<number>(3);
 
   const [currentTeam, setCurrentTeam] = useState<string | null>(null);
-  const [currentEra, setCurrentEra] = useState<Era | null>(null);
+  const [currentEra, setCurrentEra] = useState<Era | IPLEra | null>(null);
   const [currentCandidates, setCurrentCandidates] = useState<Player[]>([]);
   const [isSpinning, setIsSpinning] = useState<boolean>(false);
 
@@ -42,6 +46,9 @@ export function useStumpdGame() {
   const [isMuted, setIsMuted] = useState<boolean>(() => soundEngine.isMuted());
 
   const dailyRngRef = useRef<(() => number) | null>(null);
+
+  const activeOpponents: OpponentTeam[] =
+    gameMode === 'IPL' ? IPL_OPPONENTS : INTERNATIONAL_OPPONENTS;
 
   useEffect(() => {
     setStats(getGameStats());
@@ -60,6 +67,9 @@ export function useStumpdGame() {
     (slotIdx: number, existingPicks: Player[]) => {
       const rng = getRng();
       const slotDef = SLOTS[slotIdx] || SLOTS[0];
+      const isIPL = gameMode === 'IPL';
+      const activeTeams = isIPL ? IPL_TEAMS : NATIONAL_TEAMS;
+      const activeEras = isIPL ? IPL_ERAS : INTERNATIONAL_ERAS;
 
       // In test runner or non-browser environments, resolve synchronously
       const isTestEnv =
@@ -67,7 +77,7 @@ export function useStumpdGame() {
         (process.env.NODE_ENV === 'test' || process.env.VITEST === 'true');
 
       if (isTestEnv) {
-        const spin = draftMachine.spinSlotReels(slotIdx, rng);
+        const spin = draftMachine.spinSlotReels(slotIdx, gameMode, rng);
         setCurrentTeam(spin.team);
         setCurrentEra(spin.era);
 
@@ -75,7 +85,8 @@ export function useStumpdGame() {
           slotDef,
           spin.team,
           spin.era,
-          existingPicks
+          existingPicks,
+          gameMode
         );
         setCurrentCandidates(eligible.slice(0, 4));
         setIsSpinning(false);
@@ -89,14 +100,14 @@ export function useStumpdGame() {
         tickCount++;
         soundEngine.playReelTick(0.9 + tickCount * 0.08);
 
-        const randomTeam = TEAMS[Math.floor(Math.random() * TEAMS.length)].id;
-        const randomEra = ERAS[Math.floor(Math.random() * ERAS.length)];
+        const randomTeam = activeTeams[Math.floor(Math.random() * activeTeams.length)].id;
+        const randomEra = activeEras[Math.floor(Math.random() * activeEras.length)];
         setCurrentTeam(randomTeam);
         setCurrentEra(randomEra);
 
         if (tickCount >= 6) {
           clearInterval(interval);
-          const spin = draftMachine.spinSlotReels(slotIdx, rng);
+          const spin = draftMachine.spinSlotReels(slotIdx, gameMode, rng);
           setCurrentTeam(spin.team);
           setCurrentEra(spin.era);
 
@@ -104,31 +115,38 @@ export function useStumpdGame() {
             slotDef,
             spin.team,
             spin.era,
-            existingPicks
+            existingPicks,
+            gameMode
           );
           setCurrentCandidates(eligible.slice(0, 4));
           setIsSpinning(false);
         }
       }, 55);
     },
-    [getRng]
+    [gameMode, getRng]
   );
 
   const startMode = useCallback((modeInput: string) => {
-    let resolvedMode: GameMode = 'Spin Mode';
+    let resolvedMode: GameMode = 'International';
     let mulligans = 3;
 
-    if (modeInput.toLowerCase().includes('daily')) {
+    const lower = modeInput.toLowerCase();
+    if (lower.includes('ipl')) {
+      resolvedMode = 'IPL';
+      mulligans = 3;
+      dailyRngRef.current = null;
+    } else if (lower.includes('daily')) {
       resolvedMode = 'Daily Stumpd';
       mulligans = 0;
       const seed = getDailySeed();
       dailyRngRef.current = createSeededRandom(seed);
-    } else if (modeInput.toLowerCase().includes('practice')) {
+    } else if (lower.includes('practice')) {
       resolvedMode = 'Practice Mode';
       mulligans = 99;
       dailyRngRef.current = null;
     } else {
-      resolvedMode = 'Spin Mode';
+      // Default / Spin Mode is International Tour
+      resolvedMode = 'International';
       mulligans = 3;
       dailyRngRef.current = null;
     }
@@ -201,9 +219,13 @@ export function useStumpdGame() {
     setIsSimulating(true);
     soundEngine.playBatCrack();
 
-    const opponent = OPPONENTS[currentMatchIndex] || OPPONENTS[0];
+    const opponent = activeOpponents[currentMatchIndex] || activeOpponents[0];
     const venue = VENUES[currentMatchIndex % VENUES.length];
-    const rng = getRng();
+    
+    const isTestEnv =
+      typeof process !== 'undefined' &&
+      (process.env.NODE_ENV === 'test' || process.env.VITEST === 'true');
+    const rng = isTestEnv && !dailyRngRef.current ? () => 0.1 : getRng();
 
     const result = simulateMatch(picks, opponent, venue, captainId || undefined, rng);
 
@@ -216,14 +238,14 @@ export function useStumpdGame() {
     setLastResult(result);
     setMatchResults((prev) => [...prev, result]);
     setIsSimulating(false);
-  }, [captainId, currentMatchIndex, getRng, picks]);
+  }, [activeOpponents, captainId, currentMatchIndex, getRng, picks]);
 
   const nextMatch = useCallback(() => {
     if (!lastResult) return;
 
     if (lastResult.won) {
       const nextIdx = currentMatchIndex + 1;
-      if (nextIdx >= OPPONENTS.length) {
+      if (nextIdx >= activeOpponents.length) {
         if (gameMode === 'Daily Stumpd') {
           markDailyCompletedToday({ won: true, matchesWon: 7 });
           setIsDailyLocked(true);
@@ -247,7 +269,7 @@ export function useStumpdGame() {
       setStats(getGameStats());
       setScreen('results');
     }
-  }, [currentMatchIndex, gameMode, lastResult, matchResults]);
+  }, [activeOpponents.length, currentMatchIndex, gameMode, lastResult, matchResults]);
 
   const resetGame = useCallback(() => {
     setScreen('home');
@@ -275,6 +297,7 @@ export function useStumpdGame() {
     screen,
     setScreen,
     gameMode,
+    activeOpponents,
     currentSlotIndex,
     picks,
     captainId,

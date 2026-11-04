@@ -1,4 +1,4 @@
-import { Era, Player, PlayerRole } from './player';
+import { Era, IPLEra, Player, PlayerRole } from './player';
 import { MatchResult } from './tournament';
 
 export interface SlotDefinition {
@@ -12,11 +12,16 @@ export interface SlotDefinition {
 
 export type DraftPick = Player;
 
-export type GameMode = 'Spin' | 'Daily' | 'Practice' | 'Spin Mode' | 'Daily Stumpd' | 'Practice Mode';
+export type GameMode =
+  | 'International'
+  | 'IPL'
+  | 'Spin Mode'
+  | 'Daily Stumpd'
+  | 'Practice Mode';
 
 export interface SpinResult {
   team: string;
-  era: Era;
+  era: Era | IPLEra;
   candidates: Player[];
 }
 
@@ -32,7 +37,7 @@ export interface GameState {
   currentMatchIndex: number;
   isSpinning: boolean;
   currentTeam: string | null;
-  currentEra: Era | null;
+  currentEra: Era | IPLEra | null;
   currentCandidates: Player[];
   matchResults: MatchResult[];
 }

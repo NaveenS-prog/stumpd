@@ -1,16 +1,20 @@
+import React from 'react';
 import { Player } from '../../types/player';
+import { GameMode } from '../../types/game';
 import { CandidateCard } from './CandidateCard';
 
 interface CandidateListProps {
   candidates: Player[];
   onSelectPlayer: (player: Player) => void;
   isSpinning?: boolean;
+  gameMode?: GameMode;
 }
 
 export const CandidateList: React.FC<CandidateListProps> = ({
   candidates,
   onSelectPlayer,
   isSpinning = false,
+  gameMode = 'International',
 }) => {
   if (isSpinning) {
     return (
@@ -49,6 +53,7 @@ export const CandidateList: React.FC<CandidateListProps> = ({
             key={player.id}
             player={player}
             onSelect={onSelectPlayer}
+            gameMode={gameMode}
           />
         ))}
       </div>

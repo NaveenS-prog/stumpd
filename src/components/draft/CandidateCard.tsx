@@ -1,9 +1,12 @@
+import React from 'react';
 import { Player, PlayerRole } from '../../types/player';
+import { GameMode } from '../../types/game';
 
 interface CandidateCardProps {
   player: Player;
   onSelect: (player: Player) => void;
   disabled?: boolean;
+  gameMode?: GameMode;
 }
 
 function getRoleBadge(role: PlayerRole): string {
@@ -32,7 +35,10 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
   player,
   onSelect,
   disabled = false,
+  gameMode = 'International',
 }) => {
+  const isIPL = gameMode === 'IPL';
+
   return (
     <div
       onClick={() => !disabled && onSelect(player)}
@@ -40,7 +46,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
     >
       {/* Left: Player Info */}
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2 mb-1 flex-wrap">
+        <div className="flex items-center gap-1.5 sm:gap-2 mb-1 flex-wrap">
           <span
             className={`text-[10px] font-semibold px-2 py-0.5 rounded border uppercase font-mono ${getRoleBadge(
               player.primaryRole
@@ -48,13 +54,27 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
           >
             {player.primaryRole}
           </span>
-          <span className="text-[10px] text-turf-400 font-mono">
-            {player.country} • {player.eras?.[0] || 'Modern'}
-          </span>
-          {player.franchise && player.franchise.length > 0 && (
-            <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-turf-950 text-gold-400 border border-gold-400/20">
-              {player.franchise.join(', ')}
-            </span>
+
+          {isIPL ? (
+            <>
+              {player.iplCareers && player.iplCareers.length > 0 && (
+                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-gold-400/20 text-gold-300 border border-gold-400/30">
+                  {player.iplCareers.map((c) => c.franchise).join(', ')}
+                </span>
+              )}
+              <span className="text-[10px] text-turf-400 font-mono">
+                {player.country}
+              </span>
+            </>
+          ) : (
+            <>
+              <span className="text-[10px] text-turf-300 font-mono font-semibold">
+                {player.country}
+              </span>
+              <span className="text-[10px] text-turf-400 font-mono">
+                • {player.internationalEras?.length ? player.internationalEras.join(', ') : player.eras?.[0] || 'Modern'}
+              </span>
+            </>
           )}
         </div>
 

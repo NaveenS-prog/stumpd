@@ -1,7 +1,6 @@
-import { Team } from '../types/player';
+import { Team, Era, IPLEra } from '../types/player';
 
-export const TEAMS: Team[] = [
-  // 10 Test Nations
+export const NATIONAL_TEAMS: Team[] = [
   {
     id: 'India',
     name: 'India',
@@ -72,8 +71,9 @@ export const TEAMS: Team[] = [
     type: 'Country',
     color: '#2563EB',
   },
+];
 
-  // 10 IPL Franchises
+export const IPL_TEAMS: Team[] = [
   {
     id: 'CSK',
     name: 'Chennai Super Kings',
@@ -145,3 +145,9 @@ export const TEAMS: Team[] = [
     color: '#1E293B',
   },
 ];
+
+export const INTERNATIONAL_ERAS: Era[] = ['1980s', '1990s', '2000s', '2010s', 'Modern'];
+export const IPL_ERAS: IPLEra[] = ['2008–2012', '2013–2017', '2018–2021', '2022–Present'];
+
+// Combined TEAMS for backward compatibility
+export const TEAMS: Team[] = [...NATIONAL_TEAMS, ...IPL_TEAMS];

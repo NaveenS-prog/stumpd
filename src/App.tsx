@@ -9,13 +9,13 @@ import { LineupReorderModal } from './components/draft/LineupReorderModal';
 import { MatchScreen } from './components/match/MatchScreen';
 import { ResultsScreen } from './components/results/ResultsScreen';
 import { SLOTS } from './data/slots';
-import { OPPONENTS } from './data/opponents';
 import { VENUES } from './data/venues';
 
 export default function App() {
   const {
     screen,
     gameMode,
+    activeOpponents,
     currentSlotIndex,
     picks,
     captainId,
@@ -46,8 +46,19 @@ export default function App() {
 
   const [isReorderModalOpen, setIsReorderModalOpen] = useState(false);
 
-  const currentOpponent = OPPONENTS[currentMatchIndex] || OPPONENTS[0];
+  const currentOpponent = activeOpponents[currentMatchIndex] || activeOpponents[0];
   const currentVenue = VENUES[currentMatchIndex % VENUES.length];
+
+  const getModeTitle = () => {
+    switch (gameMode) {
+      case 'IPL':
+        return 'IPL Championship';
+      case 'International':
+        return 'International Tour';
+      default:
+        return gameMode;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#07110D] text-[#F0FDF4] flex flex-col justify-between selection:bg-gold-400 selection:text-turf-950 font-sans">
@@ -65,7 +76,7 @@ export default function App() {
                 STUMPD<span className="text-gold-400">.</span>
               </span>
               <span className="text-[10px] text-turf-400 uppercase tracking-widest font-mono">
-                {screen !== 'home' ? gameMode : 'Cricket Strategy'}
+                {screen !== 'home' ? getModeTitle() : 'Cricket Strategy'}
               </span>
             </div>
           </button>
@@ -124,6 +135,7 @@ export default function App() {
                       currentEra={currentEra}
                       isSpinning={isSpinning}
                       mulligansRemaining={mulligansRemaining}
+                      gameMode={gameMode}
                       onSpin={spinReels}
                       onMulligan={mulligan}
                       disableMulligan={gameMode === 'Daily Stumpd'}
@@ -133,6 +145,7 @@ export default function App() {
                       candidates={currentCandidates}
                       onSelectPlayer={draftPlayer}
                       isSpinning={isSpinning}
+                      gameMode={gameMode}
                     />
                   </>
                 ) : (
@@ -192,7 +205,7 @@ export default function App() {
         {screen === 'match' && (
           <MatchScreen
             matchIndex={currentMatchIndex}
-            totalMatches={OPPONENTS.length}
+            totalMatches={activeOpponents.length}
             opponent={currentOpponent}
             venue={currentVenue}
             userXI={picks}
@@ -209,7 +222,7 @@ export default function App() {
             userXI={picks}
             captainId={captainId}
             matchResults={matchResults}
-            opponents={OPPONENTS}
+            opponents={activeOpponents}
             gameMode={gameMode}
             onPlayAgain={resetGame}
           />
@@ -219,7 +232,7 @@ export default function App() {
       {/* Footer */}
       <footer className="bg-[#0A1813] border-t border-[#1F3F32] py-3 px-4 text-center">
         <p className="text-[11px] font-mono text-turf-500">
-          STUMPD. • Cricket XI Drafting &amp; Tournament Strategy • 697 Legends
+          STUMPD. • Cricket XI Drafting &amp; Tournament Strategy • 599 Verified Legends
         </p>
       </footer>
     </div>

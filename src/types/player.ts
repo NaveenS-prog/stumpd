@@ -21,13 +21,21 @@ export type BowlingType =
   | 'None';
 
 export type Era = '1980s' | '1990s' | '2000s' | '2010s' | 'Modern';
+export type IPLEra = '2008–2012' | '2013–2017' | '2018–2021' | '2022–Present';
+
+export interface IPLAffiliation {
+  franchise: string; // 'CSK' | 'MI' | 'RCB' | 'KKR' | 'RR' | 'SRH' | 'DC' | 'PK' | 'LSG' | 'GT'
+  eras: IPLEra[];
+}
 
 export interface Player {
   id: string;
   name: string;
   country: string;              // Primary nationality
-  franchise?: string[];         // Associated IPL franchises (e.g. ['CSK', 'MI'])
-  eras: Era[];                  // Active eras where player qualifies
+  internationalEras: Era[];     // Decades player played internationally
+  iplCareers?: IPLAffiliation[]; // Verified IPL career with franchises and IPL eras
+  eras?: Era[];                 // Compatibility fallback
+  franchise?: string[];         // Compatibility fallback
   primaryRole: PlayerRole;
   secondaryRoles?: PlayerRole[];
   battingRating: number;        // 40-99

@@ -1,10 +1,13 @@
-import { Era } from '../../types/player';
+import React from 'react';
+import { Era, IPLEra } from '../../types/player';
+import { GameMode } from '../../types/game';
 
 interface SpinWheelsProps {
   currentTeam: string | null;
-  currentEra: Era | null;
+  currentEra: Era | IPLEra | null;
   isSpinning: boolean;
   mulligansRemaining: number;
+  gameMode?: GameMode;
   onSpin: () => void;
   onMulligan: () => void;
   disableMulligan?: boolean;
@@ -15,27 +18,31 @@ export const SpinWheels: React.FC<SpinWheelsProps> = ({
   currentEra,
   isSpinning,
   mulligansRemaining,
+  gameMode = 'International',
   onSpin,
   onMulligan,
   disableMulligan = false,
 }) => {
   const hasSpun = Boolean(currentTeam || currentEra);
+  const isIPL = gameMode === 'IPL';
 
   return (
     <div className="w-full bg-[#12261E] border border-[#1F3F32] rounded-2xl p-4 sm:p-5 shadow-2xl mb-5">
       {/* Wheels Row */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4">
-        {/* Team Reel */}
+        {/* Team / Franchise Reel */}
         <div className="bg-[#0A1813] border border-[#1F3F32] rounded-xl p-3 sm:p-4 text-center flex flex-col items-center justify-center min-h-[90px] sm:min-h-[105px]">
           <span className="text-[10px] font-mono uppercase tracking-wider text-turf-400 mb-1">
-            Team / Nation
+            {isIPL ? '🏏 IPL Franchise' : '🌍 Nation / Team'}
           </span>
           <div
             className={`text-lg sm:text-xl font-bold tracking-wide transition-all ${
               isSpinning
                 ? 'text-gold-400 animate-pulse blur-[0.5px]'
                 : currentTeam
-                ? 'text-white'
+                ? isIPL
+                  ? 'text-gold-400 font-mono font-black'
+                  : 'text-white'
                 : 'text-turf-500'
             }`}
           >
@@ -46,14 +53,14 @@ export const SpinWheels: React.FC<SpinWheelsProps> = ({
         {/* Era Reel */}
         <div className="bg-[#0A1813] border border-[#1F3F32] rounded-xl p-3 sm:p-4 text-center flex flex-col items-center justify-center min-h-[90px] sm:min-h-[105px]">
           <span className="text-[10px] font-mono uppercase tracking-wider text-turf-400 mb-1">
-            Era
+            {isIPL ? '📅 IPL Era' : '⏳ Decade / Era'}
           </span>
           <div
             className={`text-lg sm:text-xl font-bold tracking-wide transition-all ${
               isSpinning
                 ? 'text-gold-400 animate-pulse blur-[0.5px]'
                 : currentEra
-                ? 'text-gold-400'
+                ? 'text-gold-400 font-mono'
                 : 'text-turf-500'
             }`}
           >
@@ -70,7 +77,7 @@ export const SpinWheels: React.FC<SpinWheelsProps> = ({
           disabled={isSpinning}
           className="w-full py-3.5 px-4 rounded-xl bg-gold-400 hover:bg-gold-300 disabled:opacity-50 text-turf-950 font-black text-sm uppercase tracking-wider transition-all duration-150 active:scale-98 shadow-lg shadow-gold-400/10 flex items-center justify-center gap-2"
         >
-          <span>{isSpinning ? '🎡 Spinning Reels...' : '🎡 Spin for this slot'}</span>
+          <span>{isSpinning ? '🎡 Spinning Reels...' : `🎡 Spin for ${isIPL ? 'Franchise & Era' : 'Nation & Era'}`}</span>
         </button>
       ) : (
         <div className="flex items-center gap-2 sm:gap-3">

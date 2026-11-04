@@ -1,4 +1,4 @@
-import { Era, Player } from './player';
+import { Era, IPLEra, Player } from './player';
 
 export type PitchType =
   | 'Dustbowl'
@@ -28,7 +28,7 @@ export interface Venue {
 export interface OpponentTeam {
   id: string;
   name: string;
-  era: Era;
+  era: Era | IPLEra;
   captain: string;
   keyPlayer: string;
   description: string;

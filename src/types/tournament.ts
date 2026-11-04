@@ -73,6 +73,8 @@ export interface MatchResult {
   topPerformers: PlayerPerformance[];
   userScorecard?: PlayerPerformance[];
   opponentScorecard?: PlayerPerformance[];
+  activeSynergyNames?: string[];
+  activeTraitHighlights?: string[];
 }
 
 export interface Match {

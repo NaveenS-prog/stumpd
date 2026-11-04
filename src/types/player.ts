@@ -23,6 +23,26 @@ export type BowlingType =
 export type Era = '1980s' | '1990s' | '2000s' | '2010s' | 'Modern';
 export type IPLEra = '2008–2012' | '2013–2017' | '2018–2021' | '2022–Present';
 
+export type TraitTrigger = 'Chasing' | 'DeathOvers' | 'Powerplay' | 'SpinPitch' | 'PacePitch' | 'General';
+
+export interface PlayerTrait {
+  id: string;
+  name: string;
+  description: string;
+  trigger: TraitTrigger;
+  battingBoost?: number;  // e.g. 0.15 for +15%
+  bowlingBoost?: number;  // e.g. 0.20 for +20%
+}
+
+export interface ChemistrySynergy {
+  id: string;
+  name: string;
+  playerIds: string[];
+  description: string;
+  battingBoost?: number;
+  bowlingBoost?: number;
+}
+
 export interface IPLAffiliation {
   franchise: string; // 'CSK' | 'MI' | 'RCB' | 'KKR' | 'RR' | 'SRH' | 'DC' | 'PK' | 'LSG' | 'GT'
   eras: IPLEra[];
@@ -44,6 +64,7 @@ export interface Player {
   bowlingType: BowlingType;
   isCaptainCandidate?: boolean; // Bonus leadership potential
   rarity?: 'Legend' | 'Icon' | 'Pro';
+  trait?: PlayerTrait;
 }
 
 export type TeamType = 'Country' | 'Franchise';

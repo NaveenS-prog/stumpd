@@ -3,14 +3,15 @@ import { Player, Era } from '../types/player';
 import { SlotDefinition } from '../types/game';
 import { TEAMS } from '../data/teams';
 
-export const ERAS: Era[] = ['1980s', '1990s', '2000s', '2010s', '2020s'];
+export const ERAS: Era[] = ['1980s', '1990s', '2000s', '2010s', 'Modern'];
 
 const ALL_PLAYERS: Player[] = playersData as Player[];
 
 function matchesSlotRole(player: Player, slot: SlotDefinition): boolean {
   const roleMatches =
     slot.eligibleRoles.includes(player.primaryRole) ||
-    (Boolean(player.secondaryRole) && slot.eligibleRoles.includes(player.secondaryRole!));
+    (Boolean(player.secondaryRoles) &&
+      player.secondaryRoles!.some((r) => slot.eligibleRoles.includes(r)));
 
   if (!roleMatches) return false;
 
@@ -20,7 +21,8 @@ function matchesSlotRole(player: Player, slot: SlotDefinition): boolean {
       player.bowlingType?.includes('Spin') ||
       player.bowlingType?.includes('Break') ||
       player.bowlingType?.includes('Orthodox') ||
-      player.bowlingType?.includes('Chinaman');
+      player.bowlingType?.includes('Chinaman') ||
+      player.bowlingType?.includes('Unorthodox');
 
     if (!isSpin) return false;
   }
@@ -34,13 +36,11 @@ function matchesTeam(player: Player, teamIdOrName: string): boolean {
   );
   const targetId = teamObj ? teamObj.id : teamIdOrName;
 
-  return player.country === targetId || (Boolean(player.iplTeams) && player.iplTeams!.includes(targetId));
+  return player.country === targetId || (Boolean(player.franchise) && player.franchise!.includes(targetId));
 }
 
 function matchesEra(player: Player, era: Era): boolean {
-  if (player.era === era) return true;
-  if (player.activeEras && player.activeEras.includes(era)) return true;
-  return false;
+  return Boolean(player.eras && player.eras.includes(era));
 }
 
 function getEraDistance(a: Era, b: Era): number {

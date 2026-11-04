@@ -28,6 +28,6 @@ describe('Draft Machine & Candidate Resolution', () => {
   it('generates reel spin results with valid team and era', () => {
     const spin = draftMachine.spinSlotReels(0);
     expect(TEAMS.some((t) => t.id === spin.team || t.name === spin.team)).toBe(true);
-    expect(['1980s', '1990s', '2000s', '2010s', '2020s']).toContain(spin.era);
+    expect(['1980s', '1990s', '2000s', '2010s', 'Modern']).toContain(spin.era);
   });
 });

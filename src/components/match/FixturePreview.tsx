@@ -29,7 +29,7 @@ export const FixturePreview: React.FC<FixturePreviewProps> = ({
       <div className="flex items-center justify-between pb-3 border-b border-turf-800 mb-4">
         <div>
           <span className="text-[10px] font-mono uppercase text-gold-400 font-bold tracking-widest">
-            Campaign Fixture {matchNumber} of {totalMatches}
+            Campaign Fixture {matchNumber} of {totalMatches} • {venue.name}
           </span>
           <h2 className="text-xl md:text-2xl font-black text-white tracking-wide">
             User XI <span className="text-turf-500 font-normal">vs</span> {opponent.name}

@@ -21,7 +21,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
             {player.country}
           </span>
           <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-gold-400/15 text-gold-300 border border-gold-400/30">
-            {player.era}
+            {player.eras?.[0] || 'Modern'}
           </span>
           <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-turf-700/60 text-white">
             {player.primaryRole}
@@ -35,14 +35,14 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
 
         {/* Handedness & Bowling Details */}
         <div className="text-[11px] text-turf-300/90 mt-1 flex flex-wrap gap-x-2 gap-y-0.5">
-          <span>{player.battingHand === 'LHB' ? 'Left-hand Bat' : 'Right-hand Bat'}</span>
+          <span>{player.battingHand === 'Left' ? 'Left-hand Bat' : 'Right-hand Bat'}</span>
           {player.bowlingType && <span>• {player.bowlingType}</span>}
         </div>
 
         {/* IPL Franchise Tag if applicable */}
-        {player.iplTeams && player.iplTeams.length > 0 && (
+        {player.franchise && player.franchise.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1">
-            {player.iplTeams.map((ipl) => (
+            {player.franchise.map((ipl) => (
               <span
                 key={ipl}
                 className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-turf-800/80 text-turf-300 border border-turf-700"

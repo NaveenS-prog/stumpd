@@ -82,10 +82,10 @@ export function calculateTeamPerformanceScore(
   const baseTPS = top7Bat * 0.55 + top5Bowl * 0.45;
 
   // Team Balance Bonuses
-  const hasWk = players.some((p) => p.primaryRole === 'Wicketkeeper' || p.secondaryRole === 'Wicketkeeper');
+  const hasWk = players.some((p) => p.primaryRole === 'Wicketkeeper' || (Boolean(p.secondaryRoles) && p.secondaryRoles!.includes('Wicketkeeper')));
   const hasSpin = players.some(isSpinner);
   const pacerCount = players.filter(isPacer).length;
-  const hasAr = players.some((p) => p.primaryRole === 'Allrounder' || p.secondaryRole === 'Allrounder');
+  const hasAr = players.some((p) => p.primaryRole === 'Allrounder' || (Boolean(p.secondaryRoles) && p.secondaryRoles!.includes('Allrounder')));
 
   let balanceBonus = 0;
   if (hasWk) balanceBonus += 0.03;

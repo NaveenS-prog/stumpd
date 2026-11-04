@@ -22,7 +22,6 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
   onPlayAgain,
 }) => {
   const [copied, setCopied] = useState(false);
-  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
 
   const winsCount = matchResults.filter((r) => r.won).length;
   const totalMatches = matchResults.length;
@@ -46,7 +45,6 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
   const handleDownloadCard = () => {
     const cardDataUrl = generateTeamCanvasCard(userXI, captainId, `${gameMode} XI`);
     if (cardDataUrl) {
-      setDownloadUrl(cardDataUrl);
       const link = document.createElement('a');
       link.download = `stumpd-playing-xi-${Date.now()}.png`;
       link.href = cardDataUrl;

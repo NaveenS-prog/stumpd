@@ -1,9 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import React from 'react';
 import { TeamSheet } from '../../src/components/draft/TeamSheet';
 import { CandidateCard } from '../../src/components/draft/CandidateCard';
-import { CandidateList } from '../../src/components/draft/CandidateList';
 import { SlotProgress } from '../../src/components/draft/SlotProgress';
 import { SpinWheels } from '../../src/components/draft/SpinWheels';
 import { LineupReorderModal } from '../../src/components/draft/LineupReorderModal';

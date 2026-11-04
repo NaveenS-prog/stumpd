@@ -1,6 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import React from 'react';
 import { PitchCard } from '../../src/components/match/PitchCard';
 import { FixturePreview } from '../../src/components/match/FixturePreview';
 import { TossBanner } from '../../src/components/match/TossBanner';

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useStumpdGame } from './hooks/useStumpdGame';
 import { HomeScreen } from './components/home/HomeScreen';
+import { MatchSetupScreen } from './components/setup/MatchSetupScreen';
 import { SlotProgress } from './components/draft/SlotProgress';
 import { SpinWheels } from './components/draft/SpinWheels';
 import { CandidateList } from './components/draft/CandidateList';
@@ -16,6 +17,11 @@ export default function App() {
     screen,
     gameMode,
     activeOpponents,
+    selectedOpponent,
+    selectedVenue,
+    setSelectedOpponent,
+    setSelectedVenue,
+    proceedFromSetupToDraft,
     currentSlotIndex,
     picks,
     captainId,
@@ -46,8 +52,14 @@ export default function App() {
 
   const [isReorderModalOpen, setIsReorderModalOpen] = useState(false);
 
-  const currentOpponent = activeOpponents[currentMatchIndex] || activeOpponents[0];
-  const currentVenue = VENUES[currentMatchIndex % VENUES.length];
+  const currentOpponent =
+    currentMatchIndex === 0 && selectedOpponent
+      ? selectedOpponent
+      : activeOpponents[currentMatchIndex] || activeOpponents[0];
+  const currentVenue =
+    currentMatchIndex === 0 && selectedVenue
+      ? selectedVenue
+      : VENUES[currentMatchIndex % VENUES.length];
 
   const getModeTitle = () => {
     switch (gameMode) {
@@ -117,6 +129,20 @@ export default function App() {
           />
         )}
 
+        {screen === 'match-setup' && (
+          <MatchSetupScreen
+            gameMode={gameMode}
+            opponents={activeOpponents}
+            venues={VENUES}
+            selectedOpponent={selectedOpponent}
+            selectedVenue={selectedVenue}
+            onSelectOpponent={setSelectedOpponent}
+            onSelectVenue={setSelectedVenue}
+            onProceedToDraft={proceedFromSetupToDraft}
+            onBackToHome={resetGame}
+          />
+        )}
+
         {screen === 'draft' && (
           <div className="w-full">
             <SlotProgress
@@ -136,6 +162,12 @@ export default function App() {
                       isSpinning={isSpinning}
                       mulligansRemaining={mulligansRemaining}
                       gameMode={gameMode}
+                      fixtureInfo={{
+                        opponentName: selectedOpponent.name,
+                        venueName: selectedVenue.name,
+                        pitchType: selectedVenue.pitchType,
+                        pitchDescription: selectedVenue.pitchDescription,
+                      }}
                       onSpin={spinReels}
                       onMulligan={mulligan}
                       disableMulligan={gameMode === 'Daily Stumpd'}
@@ -146,6 +178,7 @@ export default function App() {
                       onSelectPlayer={draftPlayer}
                       isSpinning={isSpinning}
                       gameMode={gameMode}
+                      currentPicks={picks}
                     />
                   </>
                 ) : (

@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Player, Era, IPLEra } from '../types/player';
 import { GameMode, GamePhase } from '../types/game';
-import { MatchResult, OpponentTeam } from '../types/tournament';
+import { MatchResult, OpponentTeam, Venue } from '../types/tournament';
 import { SLOTS } from '../data/slots';
 import { INTERNATIONAL_OPPONENTS, IPL_OPPONENTS } from '../data/opponents';
 import { VENUES } from '../data/venues';
@@ -49,6 +49,11 @@ export function useStumpdGame() {
 
   const activeOpponents: OpponentTeam[] =
     gameMode === 'IPL' ? IPL_OPPONENTS : INTERNATIONAL_OPPONENTS;
+
+  const [selectedOpponent, setSelectedOpponent] = useState<OpponentTeam>(
+    () => INTERNATIONAL_OPPONENTS[0]
+  );
+  const [selectedVenue, setSelectedVenue] = useState<Venue>(() => VENUES[0]);
 
   useEffect(() => {
     setStats(getGameStats());
@@ -129,30 +134,46 @@ export function useStumpdGame() {
   const startMode = useCallback((modeInput: string) => {
     let resolvedMode: GameMode = 'International';
     let mulligans = 3;
+    let targetScreen: GamePhase = 'match-setup';
 
     const lower = modeInput.toLowerCase();
     if (lower.includes('ipl')) {
       resolvedMode = 'IPL';
       mulligans = 3;
       dailyRngRef.current = null;
+      targetScreen = 'match-setup';
     } else if (lower.includes('daily')) {
       resolvedMode = 'Daily Stumpd';
       mulligans = 0;
       const seed = getDailySeed();
       dailyRngRef.current = createSeededRandom(seed);
+      targetScreen = 'draft';
     } else if (lower.includes('practice')) {
       resolvedMode = 'Practice Mode';
       mulligans = 99;
       dailyRngRef.current = null;
-    } else {
-      // Default / Spin Mode is International Tour
+      targetScreen = 'match-setup';
+    } else if (lower === 'spin') {
       resolvedMode = 'International';
       mulligans = 3;
       dailyRngRef.current = null;
+      targetScreen = 'draft';
+    } else {
+      // Default / International Tour
+      resolvedMode = 'International';
+      mulligans = 3;
+      dailyRngRef.current = null;
+      targetScreen = 'match-setup';
     }
 
+    const opps = resolvedMode === 'IPL' ? IPL_OPPONENTS : INTERNATIONAL_OPPONENTS;
+    const initialOpp = opps[0];
+    setSelectedOpponent(initialOpp);
+    const defaultVenue = VENUES.find((v) => v.id === initialOpp.venueId) || VENUES[0];
+    setSelectedVenue(defaultVenue);
+
     setGameMode(resolvedMode);
-    setScreen('draft');
+    setScreen(targetScreen);
     setCurrentSlotIndex(0);
     setPicks([]);
     setCaptainId(null);
@@ -162,6 +183,15 @@ export function useStumpdGame() {
     setCurrentMatchIndex(0);
 
     // Reset reels so user spins for slot 0 explicitly!
+    setCurrentTeam(null);
+    setCurrentEra(null);
+    setCurrentCandidates([]);
+    setIsSpinning(false);
+  }, []);
+
+  const proceedFromSetupToDraft = useCallback(() => {
+    setScreen('draft');
+    setCurrentSlotIndex(0);
     setCurrentTeam(null);
     setCurrentEra(null);
     setCurrentCandidates([]);
@@ -219,8 +249,14 @@ export function useStumpdGame() {
     setIsSimulating(true);
     soundEngine.playBatCrack();
 
-    const opponent = activeOpponents[currentMatchIndex] || activeOpponents[0];
-    const venue = VENUES[currentMatchIndex % VENUES.length];
+    const opponent =
+      currentMatchIndex === 0 && selectedOpponent
+        ? selectedOpponent
+        : activeOpponents[currentMatchIndex] || activeOpponents[0];
+    const venue =
+      currentMatchIndex === 0 && selectedVenue
+        ? selectedVenue
+        : VENUES[currentMatchIndex % VENUES.length];
     
     const isTestEnv =
       typeof process !== 'undefined' &&
@@ -238,7 +274,7 @@ export function useStumpdGame() {
     setLastResult(result);
     setMatchResults((prev) => [...prev, result]);
     setIsSimulating(false);
-  }, [activeOpponents, captainId, currentMatchIndex, getRng, picks]);
+  }, [activeOpponents, captainId, currentMatchIndex, getRng, picks, selectedOpponent, selectedVenue]);
 
   const nextMatch = useCallback(() => {
     if (!lastResult) return;
@@ -298,6 +334,11 @@ export function useStumpdGame() {
     setScreen,
     gameMode,
     activeOpponents,
+    selectedOpponent,
+    selectedVenue,
+    setSelectedOpponent,
+    setSelectedVenue,
+    proceedFromSetupToDraft,
     currentSlotIndex,
     picks,
     captainId,

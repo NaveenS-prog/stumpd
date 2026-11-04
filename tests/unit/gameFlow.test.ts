@@ -75,4 +75,29 @@ describe('Game State Flow Integration', () => {
     expect(result.current.screen).toBe('draft');
     expect(result.current.mulligansRemaining).toBe(0);
   });
+
+  it('flows through match setup before entering draft phase', () => {
+    const { result } = renderHook(() => useStumpdGame());
+
+    // Click start mode -> transitions to match-setup first!
+    act(() => {
+      result.current.startMode('International');
+    });
+    expect(result.current.screen).toBe('match-setup');
+    expect(result.current.selectedOpponent).toBeDefined();
+    expect(result.current.selectedVenue).toBeDefined();
+
+    // Change opponent and venue
+    const newOpp = result.current.activeOpponents[1];
+    act(() => {
+      result.current.setSelectedOpponent(newOpp);
+    });
+    expect(result.current.selectedOpponent.id).toBe(newOpp.id);
+
+    // Proceed to draft
+    act(() => {
+      result.current.proceedFromSetupToDraft();
+    });
+    expect(result.current.screen).toBe('draft');
+  });
 });

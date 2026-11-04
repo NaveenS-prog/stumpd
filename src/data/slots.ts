@@ -1,0 +1,82 @@
+import { SlotDefinition } from '../types/game';
+
+export const SLOTS: SlotDefinition[] = [
+  {
+    id: 1,
+    name: 'Opener 1',
+    shortName: 'Open 1',
+    description: 'Explosive or solid top-order pioneer against the new ball',
+    eligibleRoles: ['Opener'],
+  },
+  {
+    id: 2,
+    name: 'Opener 2',
+    shortName: 'Open 2',
+    description: 'Opening partner setting the innings foundation',
+    eligibleRoles: ['Opener'],
+  },
+  {
+    id: 3,
+    name: 'No. 3 (Anchor)',
+    shortName: 'No. 3',
+    description: 'Anchor or counter-attacker stabilizing the innings',
+    eligibleRoles: ['TopOrder', 'Opener'],
+  },
+  {
+    id: 4,
+    name: 'No. 4 (Core)',
+    shortName: 'No. 4',
+    description: 'Engine room middle-order specialist',
+    eligibleRoles: ['TopOrder', 'MiddleOrder'],
+  },
+  {
+    id: 5,
+    name: 'No. 5 (Dynamic)',
+    shortName: 'No. 5',
+    description: 'Accelerating bat or versatile all-rounder',
+    eligibleRoles: ['MiddleOrder', 'Allrounder'],
+  },
+  {
+    id: 6,
+    name: 'No. 6 (Finisher / AR)',
+    shortName: 'No. 6',
+    description: 'Death-overs accelerator and lower-order powerhouse',
+    eligibleRoles: ['MiddleOrder', 'Finisher', 'Allrounder'],
+  },
+  {
+    id: 7,
+    name: 'Allrounder',
+    shortName: 'AR',
+    description: 'Dual-threat asset balancing bat and ball',
+    eligibleRoles: ['Allrounder'],
+  },
+  {
+    id: 8,
+    name: 'Wicketkeeper',
+    shortName: 'WK',
+    description: 'Gloveman behind the stumps and lower-order bat',
+    eligibleRoles: ['Wicketkeeper'],
+  },
+  {
+    id: 9,
+    name: 'Lead Spinner',
+    shortName: 'Spinner',
+    description: 'Turn and deception maestro for middle overs',
+    eligibleRoles: ['Spinner', 'Allrounder'],
+    requiresSpinBowling: true,
+  },
+  {
+    id: 10,
+    name: 'Strike Pacer 1',
+    shortName: 'Pacer 1',
+    description: 'Opening spell speedster and swing merchant',
+    eligibleRoles: ['Pacer'],
+  },
+  {
+    id: 11,
+    name: 'Strike Pacer 2',
+    shortName: 'Pacer 2',
+    description: 'Express pace enforcer or death-overs yorker specialist',
+    eligibleRoles: ['Pacer'],
+  },
+];

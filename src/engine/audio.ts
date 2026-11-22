@@ -61,6 +61,13 @@ class SoundEngine {
     return next;
   }
 
+  public unlockContext(): void {
+    const ctx = this.getContext();
+    if (ctx && ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
+  }
+
   public playReelTick(pitchOffset: number = 1): void {
     if (this.muted) return;
     const ctx = this.getContext();

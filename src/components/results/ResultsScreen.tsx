@@ -4,6 +4,7 @@ import { MatchResult, OpponentTeam } from '../../types/tournament';
 import { TrophyHero } from './TrophyHero';
 import { formatEmojiGrid, shareCampaignResult, generateTeamCanvasCard } from '../../utils/share';
 import { calculateUniversalTeamScore } from '../../engine/teamScore';
+import { getDailyDateString } from '../../engine/dailySeed';
 import { saveToUniversalLeaderboard, getUniversalLeaderboard } from '../../utils/storage';
 import { UniversalScoreboardModal } from '../scoreboard/UniversalScoreboardModal';
 import { trackEvent } from '../../utils/analytics';
@@ -59,7 +60,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
     const isInvincible = winsCount === totalMatches && totalMatches >= 7;
     const captain = userXI.find((p) => p.id === captainId);
 
-    saveToUniversalLeaderboard({
+    const savedEntry = saveToUniversalLeaderboard({
       teamName: finalTeamName,
       creatorName: creatorName.trim() || undefined,
       mode: gameMode,
@@ -74,9 +75,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
     });
 
     const leaderboard = getUniversalLeaderboard();
-    const rank = leaderboard.findIndex(
-      (entry) => entry.teamName === finalTeamName && entry.totalScore === teamScore.totalScore
-    ) + 1;
+    const rank = leaderboard.findIndex((entry) => entry.id === savedEntry.id) + 1;
     setSavedRank(rank > 0 ? rank : 1);
     setIsSaved(true);
   };
@@ -89,7 +88,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
     const outcomes = matchResults.map((r) => r.won);
     const allPerformers = matchResults.flatMap((r) => r.topPerformers || []);
     const mvp = allPerformers.length > 0 ? allPerformers[0].playerName : undefined;
-    const todayStr = gameMode === 'Daily Stumpd' ? new Date().toISOString().split('T')[0] : undefined;
+    const todayStr = gameMode === 'Daily Stumpd' ? getDailyDateString() : undefined;
     const text = formatEmojiGrid(outcomes, gameMode, avgRating, todayStr, mvp);
     const result = await shareCampaignResult(text, `Stumpd ${gameMode} XI`);
     trackEvent('share_clicked', { status: result, mode: gameMode });

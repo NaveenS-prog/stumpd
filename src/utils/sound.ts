@@ -56,15 +56,7 @@ export function initAudioUnlock(): void {
   const unlock = () => {
     isUnlocked = true;
     try {
-      const AudioCtx =
-        window.AudioContext ||
-        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      if (AudioCtx) {
-        const dummyCtx = new AudioCtx();
-        if (dummyCtx.state === 'suspended') {
-          dummyCtx.resume().catch(() => {});
-        }
-      }
+      soundEngine.unlockContext();
     } catch {
       // Ignore
     }

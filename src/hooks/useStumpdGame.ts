@@ -331,6 +331,7 @@ export function useStumpdGame() {
   const toggleMute = useCallback(() => {
     const next = soundEngine.toggleMute();
     setIsMuted(next);
+    trackEvent('mute_toggled', { isMuted: next });
     return next;
   }, []);
 

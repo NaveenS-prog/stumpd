@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Player } from '../../types/player';
 import { MatchResult, OpponentTeam } from '../../types/tournament';
 import { TrophyHero } from './TrophyHero';
@@ -6,6 +6,7 @@ import { formatEmojiGrid, shareCampaignResult, generateTeamCanvasCard } from '..
 import { calculateUniversalTeamScore } from '../../engine/teamScore';
 import { saveToUniversalLeaderboard, getUniversalLeaderboard } from '../../utils/storage';
 import { UniversalScoreboardModal } from '../scoreboard/UniversalScoreboardModal';
+import { trackEvent } from '../../utils/analytics';
 
 interface ResultsScreenProps {
   userXI: Player[];
@@ -42,6 +43,15 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
   const primaryLossOpponent = primaryLossIdx !== -1 ? opponents[primaryLossIdx] : null;
 
   const teamScore = calculateUniversalTeamScore(userXI, captainId);
+
+  useEffect(() => {
+    trackEvent('round_completed', {
+      score: teamScore.totalScore,
+      grade: teamScore.grade,
+      matchesWon: winsCount,
+      totalMatches,
+    });
+  }, []);
 
   const handleSaveToLeaderboard = (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,6 +92,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
     const todayStr = gameMode === 'Daily Stumpd' ? new Date().toISOString().split('T')[0] : undefined;
     const text = formatEmojiGrid(outcomes, gameMode, avgRating, todayStr, mvp);
     const result = await shareCampaignResult(text, `Stumpd ${gameMode} XI`);
+    trackEvent('share_clicked', { status: result, mode: gameMode });
     if (result === 'shared' || result === 'copied') {
       setShareStatus(result);
       setTimeout(() => setShareStatus('idle'), 2500);
@@ -130,7 +141,10 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
             </div>
             <button
               type="button"
-              onClick={onPlayAgain}
+              onClick={() => {
+                trackEvent('replay_clicked', { source: 'near_miss_card' });
+                onPlayAgain();
+              }}
               className="shrink-0 px-6 py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase tracking-wider transition-all shadow-lg active:scale-95 flex items-center justify-center gap-1.5 animate-pulse"
             >
               <span>⚡ Run It Back (Re-spin)</span>
@@ -413,7 +427,10 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
       <div className="text-center pt-2">
         <button
           type="button"
-          onClick={onPlayAgain}
+          onClick={() => {
+            trackEvent('replay_clicked', { source: 'bottom_button' });
+            onPlayAgain();
+          }}
           className="w-full sm:w-auto px-10 py-4 rounded-xl bg-gold-400 hover:bg-gold-300 text-turf-950 font-black text-sm uppercase tracking-wider transition-all duration-150 active:scale-98 shadow-2xl hover:shadow-gold-400/30"
         >
           Draft New XI & Play Again 🏏

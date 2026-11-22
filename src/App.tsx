@@ -13,6 +13,7 @@ import { UniversalScoreboardModal } from './components/scoreboard/UniversalScore
 import { SLOTS } from './data/slots';
 import { VENUES } from './data/venues';
 import { initAudioUnlock } from './utils/sound';
+import { trackEvent } from './utils/analytics';
 
 export default function App() {
   const {
@@ -111,7 +112,10 @@ export default function App() {
 
             <button
               type="button"
-              onClick={toggleMute}
+              onClick={() => {
+                trackEvent('mute_toggled', { nextMuted: !isMuted });
+                toggleMute();
+              }}
               className="p-2 rounded-lg bg-[#12261E] border border-[#1F3F32] hover:border-gold-400/50 text-xs text-turf-300 hover:text-white transition-all"
               title={isMuted ? 'Unmute Sound' : 'Mute Sound'}
               aria-label="Toggle Sound"

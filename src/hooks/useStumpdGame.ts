@@ -15,6 +15,7 @@ import {
   recordTournamentFinish,
   StoredGameStats,
 } from '../utils/storage';
+import { trackEvent } from '../utils/analytics';
 import { soundEngine } from '../engine/audio';
 import {
   NATIONAL_TEAMS,
@@ -187,6 +188,8 @@ export function useStumpdGame() {
     setCurrentEra(null);
     setCurrentCandidates([]);
     setIsSpinning(false);
+
+    trackEvent('round_started', { mode: resolvedMode });
   }, []);
 
   const proceedFromSetupToDraft = useCallback(() => {
@@ -274,6 +277,7 @@ export function useStumpdGame() {
     setLastResult(result);
     setMatchResults((prev) => [...prev, result]);
     setIsSimulating(false);
+    trackEvent('match_simulated', { matchIndex: currentMatchIndex, won: result.won });
   }, [activeOpponents, captainId, currentMatchIndex, getRng, picks, selectedOpponent, selectedVenue]);
 
   const nextMatch = useCallback(() => {
@@ -285,6 +289,7 @@ export function useStumpdGame() {
         if (gameMode === 'Daily Stumpd') {
           markDailyCompletedToday({ won: true, matchesWon: 7 });
           setIsDailyLocked(true);
+          trackEvent('daily_completed', { won: true, matchesWon: 7 });
         } else {
           recordTournamentFinish(true, 7);
         }

@@ -54,27 +54,50 @@ describe('Universal Team Score & Leaderboard Engine', () => {
     expect(score.strengths.some((s) => s.includes('Active Real-Life Chemistry Synergies'))).toBe(true);
   });
 
-  it('maintains universal scoreboard rankings with benchmarks and user entries', () => {
+  it('maintains universal scoreboard rankings with user-named entries only', () => {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.clear();
+    }
     const initialLeaderboard = getUniversalLeaderboard();
-    expect(initialLeaderboard.length).toBeGreaterThanOrEqual(4);
-    expect(initialLeaderboard.some((b) => b.teamName.includes('2003 Invincible Australia'))).toBe(true);
+    expect(initialLeaderboard).toEqual([]);
 
-    const saved = saveToUniversalLeaderboard({
-      teamName: 'User Test XI',
+    const saved1 = saveToUniversalLeaderboard({
+      teamName: 'Chennai Super Kings',
+      creatorName: 'Naveen',
+      mode: 'IPL',
+      totalScore: 910,
+      grade: 'S',
+      matchesWon: 6,
+      totalMatches: 7,
+      captainName: 'MS Dhoni',
+      date: '2026-11-23',
+      synergiesCount: 2,
+      isInvincible: false,
+    });
+
+    const saved2 = saveToUniversalLeaderboard({
+      teamName: 'Invincible XI',
+      creatorName: 'Tactician',
       mode: 'International',
-      totalScore: 960,
+      totalScore: 965,
       grade: 'S+',
       matchesWon: 7,
       totalMatches: 7,
-      captainName: 'MS Dhoni',
+      captainName: 'Virat Kohli',
       date: '2026-11-23',
       synergiesCount: 3,
       isInvincible: true,
     });
 
-    expect(saved.id).toBeDefined();
+    expect(saved1.id).toBeDefined();
+    expect(saved2.id).toBeDefined();
 
     const updatedLeaderboard = getUniversalLeaderboard();
-    expect(updatedLeaderboard[0].totalScore).toBeGreaterThanOrEqual(955);
+    expect(updatedLeaderboard.length).toBe(2);
+    // Highest score should be first
+    expect(updatedLeaderboard[0].teamName).toBe('Invincible XI');
+    expect(updatedLeaderboard[0].totalScore).toBe(965);
+    expect(updatedLeaderboard[1].teamName).toBe('Chennai Super Kings');
+    expect(updatedLeaderboard[1].totalScore).toBe(910);
   });
 });

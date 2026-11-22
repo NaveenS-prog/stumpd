@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Player } from '../../types/player';
 import { MatchResult, OpponentTeam } from '../../types/tournament';
 import { TrophyHero } from './TrophyHero';
 import { formatEmojiGrid, copyToClipboard, generateTeamCanvasCard } from '../../utils/share';
 import { calculateUniversalTeamScore } from '../../engine/teamScore';
-import { saveToUniversalLeaderboard } from '../../utils/storage';
+import { saveToUniversalLeaderboard, getUniversalLeaderboard } from '../../utils/storage';
 import { UniversalScoreboardModal } from '../scoreboard/UniversalScoreboardModal';
 
 interface ResultsScreenProps {
@@ -26,6 +26,10 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
 }) => {
   const [copied, setCopied] = useState(false);
   const [isScoreboardOpen, setIsScoreboardOpen] = useState(false);
+  const [teamName, setTeamName] = useState(`${gameMode} XI`);
+  const [creatorName, setCreatorName] = useState('');
+  const [isSaved, setIsSaved] = useState(false);
+  const [savedRank, setSavedRank] = useState<number | null>(null);
 
   const winsCount = matchResults.filter((r) => r.won).length;
   const totalMatches = matchResults.length;
@@ -39,24 +43,33 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
 
   const teamScore = calculateUniversalTeamScore(userXI, captainId);
 
-  useEffect(() => {
-    if (userXI.length > 0) {
-      const isInvincible = winsCount === totalMatches && totalMatches >= 7;
-      const captain = userXI.find((p) => p.id === captainId);
-      saveToUniversalLeaderboard({
-        teamName: `${gameMode} XI`,
-        mode: gameMode,
-        totalScore: teamScore.totalScore,
-        grade: teamScore.grade,
-        matchesWon: winsCount,
-        totalMatches: totalMatches,
-        captainName: captain?.name || 'Unassigned',
-        date: new Date().toLocaleDateString(),
-        synergiesCount: Math.round(teamScore.synergyPoints / 30),
-        isInvincible,
-      });
-    }
-  }, []);
+  const handleSaveToLeaderboard = (e: React.FormEvent) => {
+    e.preventDefault();
+    const finalTeamName = teamName.trim() || `${gameMode} XI`;
+    const isInvincible = winsCount === totalMatches && totalMatches >= 7;
+    const captain = userXI.find((p) => p.id === captainId);
+
+    saveToUniversalLeaderboard({
+      teamName: finalTeamName,
+      creatorName: creatorName.trim() || undefined,
+      mode: gameMode,
+      totalScore: teamScore.totalScore,
+      grade: teamScore.grade,
+      matchesWon: winsCount,
+      totalMatches: totalMatches,
+      captainName: captain?.name || 'Unassigned',
+      date: new Date().toLocaleDateString(),
+      synergiesCount: Math.round(teamScore.synergyPoints / 30),
+      isInvincible,
+    });
+
+    const leaderboard = getUniversalLeaderboard();
+    const rank = leaderboard.findIndex(
+      (entry) => entry.teamName === finalTeamName && entry.totalScore === teamScore.totalScore
+    ) + 1;
+    setSavedRank(rank > 0 ? rank : 1);
+    setIsSaved(true);
+  };
 
   const avgRating = Math.round(
     userXI.reduce((acc, p) => acc + (p.battingRating + p.bowlingRating) / 2, 0) / userXI.length
@@ -76,7 +89,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
   };
 
   const handleDownloadCard = () => {
-    const cardDataUrl = generateTeamCanvasCard(userXI, captainId, `${gameMode} XI`);
+    const cardDataUrl = generateTeamCanvasCard(userXI, captainId, teamName.trim() || `${gameMode} XI`);
     if (cardDataUrl) {
       const link = document.createElement('a');
       link.download = `stumpd-playing-xi-${Date.now()}.png`;
@@ -188,6 +201,98 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
             </div>
           )}
         </div>
+      </div>
+
+      {/* Name Your Drafted XI & Save to Scoreboard */}
+      <div className="bg-gradient-to-r from-[#12261E] via-[#0A1813] to-[#12261E] border-2 border-gold-400/50 rounded-3xl p-5 sm:p-6 mb-8 shadow-xl">
+        <div className="flex items-center gap-2.5 mb-3">
+          <span className="text-xl">✍️</span>
+          <div>
+            <h3 className="text-white font-mono font-bold text-sm uppercase tracking-wide">
+              {isSaved ? 'Squad Immortalized on Universal Scoreboard' : 'Name Your XI & Save to Scoreboard'}
+            </h3>
+            <p className="text-xs text-turf-300 font-mono">
+              {isSaved
+                ? 'Saved to persistent storage! Visible on the Universal Scoreboard across refreshes.'
+                : 'Give your drafted lineup a custom team name to rank it on the Universal Scoreboard.'}
+            </p>
+          </div>
+        </div>
+
+        {isSaved ? (
+          <div className="bg-turf-950/80 border border-gold-400/40 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-emerald-400 font-bold font-mono text-sm">✓ Saved to Database!</span>
+                <span className="bg-gold-400 text-black text-[10px] font-black font-mono px-2 py-0.5 rounded uppercase">
+                  Rank #{savedRank}
+                </span>
+              </div>
+              <p className="text-xs text-turf-200 font-mono">
+                Team: <span className="text-white font-bold">{teamName.trim() || `${gameMode} XI`}</span>
+                {creatorName.trim() ? ` • Manager: ${creatorName.trim()}` : ''} • Score: <span className="text-gold-400 font-bold">{teamScore.totalScore} Pts</span> (Grade {teamScore.grade})
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsScoreboardOpen(true)}
+                className="px-4 py-2.5 rounded-xl bg-gold-400 hover:bg-gold-300 text-black font-black text-xs uppercase tracking-wider font-mono transition-all shadow-md flex items-center gap-1.5"
+              >
+                <span>🏆 View Scoreboard</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsSaved(false)}
+                className="px-3 py-2.5 rounded-xl bg-turf-900 hover:bg-turf-800 text-turf-300 hover:text-white border border-turf-700 text-xs font-mono transition-all"
+              >
+                Edit Name
+              </button>
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={handleSaveToLeaderboard} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-mono text-turf-300 uppercase tracking-wider mb-1 font-semibold">
+                  Team Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={teamName}
+                  onChange={(e) => setTeamName(e.target.value)}
+                  placeholder="e.g. Mumbai Mavericks, Lahore Qalandars"
+                  className="w-full bg-turf-950 border border-turf-700 focus:border-gold-400 rounded-xl px-3.5 py-2.5 text-white font-mono text-xs placeholder:text-turf-600 outline-none transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-mono text-turf-300 uppercase tracking-wider mb-1 font-semibold">
+                  Manager / Coach Name (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={creatorName}
+                  onChange={(e) => setCreatorName(e.target.value)}
+                  placeholder="e.g. Coach Naveen, Captain Cool"
+                  className="w-full bg-turf-950 border border-turf-700 focus:border-gold-400 rounded-xl px-3.5 py-2.5 text-white font-mono text-xs placeholder:text-turf-600 outline-none transition-all"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+              <span className="text-[11px] text-turf-400 font-mono">
+                Persisted in local database • Ranks by composite 0–1000 score
+              </span>
+              <button
+                type="submit"
+                className="px-6 py-2.5 rounded-xl bg-gold-400 hover:bg-gold-300 text-turf-950 font-black text-xs uppercase tracking-wider font-mono transition-all shadow-lg active:scale-95 flex items-center justify-center gap-1.5"
+              >
+                <span>💾 Save XI to Leaderboard</span>
+              </button>
+            </div>
+          </form>
+        )}
       </div>
 
       <UniversalScoreboardModal

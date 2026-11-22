@@ -39,6 +39,10 @@ export function useAudio() {
     soundEngine.playLossSting();
   }, []);
 
+  const playAnomalyChime = useCallback(() => {
+    soundEngine.playAnomalyChime();
+  }, []);
+
   return {
     isMuted,
     toggleMute,
@@ -48,5 +52,6 @@ export function useAudio() {
     playBatCrack,
     playVictoryFanfare,
     playLossSting,
+    playAnomalyChime,
   };
 }

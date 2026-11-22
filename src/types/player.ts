@@ -65,6 +65,9 @@ export interface Player {
   isCaptainCandidate?: boolean; // Bonus leadership potential
   rarity?: 'Legend' | 'Icon' | 'Pro';
   trait?: PlayerTrait;
+  isAnomaly?: boolean;          // Single-season God-Mode anomaly card
+  anomalySeason?: string;       // e.g. '2016', '2013', '1999'
+  anomalyBadge?: string;        // e.g. '973-Run God Mode', '175* Universe Boss'
 }
 
 export type TeamType = 'Country' | 'Franchise';

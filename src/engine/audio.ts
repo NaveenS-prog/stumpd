@@ -205,6 +205,35 @@ class SoundEngine {
     }
   }
 
+  public playAnomalyChime(): void {
+    if (this.muted) return;
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    try {
+      const chord = [523.25, 659.25, 783.99, 987.77, 1046.5];
+      chord.forEach((freq, i) => {
+        const noteStart = ctx.currentTime + i * 0.06;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, noteStart);
+
+        gain.gain.setValueAtTime(0.12, noteStart);
+        gain.gain.exponentialRampToValueAtTime(0.001, noteStart + 0.35);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(noteStart);
+        osc.stop(noteStart + 0.36);
+      });
+    } catch {
+      // Ignore
+    }
+  }
+
   public playLossSting(): void {
     if (this.muted) return;
     const ctx = this.getContext();

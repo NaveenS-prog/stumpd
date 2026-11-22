@@ -48,7 +48,12 @@ export const MatchScreen: React.FC<MatchScreenProps> = ({
 
       {/* When match simulation is active */}
       {isSimulating && (
-        <LiveSimProgress isSimulating={isSimulating} opponentName={opponent.name} />
+        <LiveSimProgress
+          isSimulating={isSimulating}
+          opponentName={opponent.name}
+          venueName={venue.name}
+          userXI={userXI}
+        />
       )}
 
       {/* Before match simulation: Pre-match scouting */}

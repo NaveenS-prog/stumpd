@@ -27,6 +27,11 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
   const totalMatches = matchResults.length;
   const isChampion = winsCount === totalMatches && totalMatches > 0;
   const isFinalist = !isChampion && winsCount >= 4;
+  const isNearMiss = !isChampion && winsCount >= totalMatches - 2 && winsCount < totalMatches && totalMatches >= 5;
+
+  const primaryLossIdx = matchResults.findIndex((r) => !r.won);
+  const primaryLoss = primaryLossIdx !== -1 ? matchResults[primaryLossIdx] : null;
+  const primaryLossOpponent = primaryLossIdx !== -1 ? opponents[primaryLossIdx] : null;
 
   const avgRating = Math.round(
     userXI.reduce((acc, p) => acc + (p.battingRating + p.bowlingRating) / 2, 0) / userXI.length
@@ -34,7 +39,10 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
 
   const handleCopyGrid = async () => {
     const outcomes = matchResults.map((r) => r.won);
-    const text = formatEmojiGrid(outcomes, gameMode, avgRating);
+    const allPerformers = matchResults.flatMap((r) => r.topPerformers || []);
+    const mvp = allPerformers.length > 0 ? allPerformers[0].playerName : undefined;
+    const todayStr = gameMode === 'Daily Stumpd' ? new Date().toISOString().split('T')[0] : undefined;
+    const text = formatEmojiGrid(outcomes, gameMode, avgRating, todayStr, mvp);
     const success = await copyToClipboard(text);
     if (success) {
       setCopied(true);
@@ -60,6 +68,38 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
         winsCount={winsCount}
         totalMatches={totalMatches}
       />
+
+      {/* Heartbreak Breakdown Card for 6-1 or 5-2 near-misses */}
+      {isNearMiss && primaryLoss && (
+        <div className="bg-gradient-to-r from-red-950/70 via-turf-900 to-red-950/70 border-2 border-red-500/60 rounded-2xl p-5 md:p-6 mb-8 shadow-xl relative overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xl">💔</span>
+                <span className="text-xs font-mono font-black uppercase text-red-400 tracking-wider">
+                  The Match That Broke Perfection
+                </span>
+              </div>
+              <h4 className="text-base sm:text-lg font-bold text-white font-mono">
+                Fixture {primaryLossIdx + 1}: Defeat vs {primaryLossOpponent?.name || 'Dynasty Opponent'}
+              </h4>
+              <p className="text-xs text-turf-300 mt-1">
+                Margin: <span className="text-red-400 font-semibold">{primaryLoss.margin}</span> • Score: User XI {primaryLoss.userScore.runs}/{primaryLoss.userScore.wickets} vs {primaryLoss.opponentScore.runs}/{primaryLoss.opponentScore.wickets}
+              </p>
+              <p className="text-xs text-amber-300/90 font-mono mt-2">
+                💡 Tactical Lesson: 1 more clutch boundary or a second specialist bowler could have delivered the 7-0 Invincible Gauntlet.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onPlayAgain}
+              className="shrink-0 px-6 py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase tracking-wider transition-all shadow-lg active:scale-95 flex items-center justify-center gap-1.5 animate-pulse"
+            >
+              <span>⚡ Run It Back (Re-spin)</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Share Actions Bar */}
       <div className="bg-turf-900 border border-turf-700 rounded-2xl p-4 mb-8 shadow-xl flex flex-wrap items-center justify-between gap-3">

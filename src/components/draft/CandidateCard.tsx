@@ -48,7 +48,11 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
   return (
     <div
       onClick={() => !disabled && onSelect(player)}
-      className="group relative bg-[#0A1813] hover:bg-[#12261E] border border-[#1F3F32] hover:border-gold-400/70 rounded-xl p-3 sm:p-4 transition-all duration-150 cursor-pointer shadow-md flex items-center justify-between gap-3"
+      className={`group relative rounded-xl p-3 sm:p-4 transition-all duration-150 cursor-pointer shadow-md flex items-center justify-between gap-3 ${
+        player.isAnomaly
+          ? 'bg-gradient-to-r from-[#172517] via-[#241F0A] to-[#172517] border-2 border-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.35)] ring-1 ring-amber-300/50 hover:shadow-[0_0_22px_rgba(251,191,36,0.55)]'
+          : 'bg-[#0A1813] hover:bg-[#12261E] border border-[#1F3F32] hover:border-gold-400/70'
+      }`}
     >
       {/* Left: Player Info */}
       <div className="min-w-0 flex-1">
@@ -60,6 +64,15 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
           >
             {player.primaryRole}
           </span>
+
+          {player.isAnomaly && (
+            <span
+              className="text-[10px] font-black px-2 py-0.5 rounded border uppercase font-mono bg-gradient-to-r from-amber-400 to-yellow-300 text-black border-amber-300 shadow-sm flex items-center gap-1 animate-pulse"
+              title={`Anomaly Season: ${player.anomalySeason} - ${player.anomalyBadge}`}
+            >
+              <span>🌟</span> ANOMALY {player.anomalySeason}: {player.anomalyBadge}
+            </span>
+          )}
 
           {player.trait && (
             <span

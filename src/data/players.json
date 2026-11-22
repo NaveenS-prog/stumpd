@@ -1686,6 +1686,9 @@
     "bowlingType": "Medium",
     "isCaptainCandidate": true,
     "rarity": "Legend",
+    "isAnomaly": true,
+    "anomalySeason": "2016",
+    "anomalyBadge": "973-Run God Mode",
     "trait": {
       "id": "chase_master",
       "name": "Chase Master",
@@ -4613,6 +4616,9 @@
     "bowlingType": "LegSpin",
     "isCaptainCandidate": true,
     "rarity": "Legend",
+    "isAnomaly": true,
+    "anomalySeason": "1993",
+    "anomalyBadge": "Ball of the Century Maestro",
     "trait": {
       "id": "spin_wizard",
       "name": "Spin Wizard",
@@ -5138,6 +5144,9 @@
     "bowlingType": "OffSpin",
     "isCaptainCandidate": true,
     "rarity": "Legend",
+    "isAnomaly": true,
+    "anomalySeason": "2023",
+    "anomalyBadge": "201* Miracle on One Leg",
     "trait": {
       "id": "mad_max_switch",
       "name": "Mad Max Switch-Hit",
@@ -7162,7 +7171,10 @@
     "battingHand": "Left",
     "bowlingType": "FastMedium",
     "isCaptainCandidate": false,
-    "rarity": "Legend"
+    "rarity": "Legend",
+    "isAnomaly": true,
+    "anomalySeason": "1999",
+    "anomalyBadge": "World Cup Blitz Chaser"
   },
   {
     "id": "allan-donald",
@@ -8431,7 +8443,10 @@
     "battingHand": "Right",
     "bowlingType": "Fast",
     "isCaptainCandidate": false,
-    "rarity": "Legend"
+    "rarity": "Legend",
+    "isAnomaly": true,
+    "anomalySeason": "1984",
+    "anomalyBadge": "Green Seamer Lethal Menace"
   },
   {
     "id": "michael-holding",
@@ -8765,7 +8780,10 @@
     "battingHand": "Left",
     "bowlingType": "OffSpin",
     "isCaptainCandidate": true,
-    "rarity": "Legend"
+    "rarity": "Legend",
+    "isAnomaly": true,
+    "anomalySeason": "2013",
+    "anomalyBadge": "175* Universe Boss"
   },
   {
     "id": "dwayne-bravo",

@@ -4,14 +4,20 @@ export function formatEmojiGrid(
   matchOutcomes: boolean[],
   mode: string,
   teamAvgRating?: number,
-  dailyDate?: string
+  dailyDate?: string,
+  mvpName?: string,
+  synergiesActive?: number
 ): string {
   const total = matchOutcomes.length;
   const wins = matchOutcomes.filter(Boolean).length;
   const wonFinal = matchOutcomes[matchOutcomes.length - 1] === true;
 
   let title = '🏏 Campaign Completed';
-  if (wonFinal && wins >= 5) {
+  if (wins === total && total >= 7) {
+    title = '🏆 INVINCIBLE 7-0 Champions';
+  } else if (wins === total - 1 && total >= 5) {
+    title = '🏆 Champions (6-1 Heartbreak)';
+  } else if (wonFinal && wins >= 5) {
     title = '🏆 Champions';
   } else if (wins >= 4) {
     title = '🥈 Finalists';
@@ -29,8 +35,14 @@ export function formatEmojiGrid(
   if (teamAvgRating) {
     lines.push(`⭐ Team Avg Rating: ${teamAvgRating}`);
   }
+  if (mvpName) {
+    lines.push(`👑 MVP: ${mvpName}`);
+  }
+  if (synergiesActive && synergiesActive > 0) {
+    lines.push(`✨ Chemistry Synergies: ${synergiesActive} Active`);
+  }
 
-  lines.push('#Stumpd #CricketStrategy');
+  lines.push('#Stumpd #7and0 #CricketStrategy');
   return lines.join('\n');
 }
 

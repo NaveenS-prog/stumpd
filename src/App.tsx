@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useStumpdGame } from './hooks/useStumpdGame';
 import { HomeScreen } from './components/home/HomeScreen';
 import { MatchSetupScreen } from './components/setup/MatchSetupScreen';
@@ -12,6 +12,7 @@ import { ResultsScreen } from './components/results/ResultsScreen';
 import { UniversalScoreboardModal } from './components/scoreboard/UniversalScoreboardModal';
 import { SLOTS } from './data/slots';
 import { VENUES } from './data/venues';
+import { initAudioUnlock } from './utils/sound';
 
 export default function App() {
   const {
@@ -53,6 +54,10 @@ export default function App() {
 
   const [isReorderModalOpen, setIsReorderModalOpen] = useState(false);
   const [isScoreboardOpen, setIsScoreboardOpen] = useState(false);
+
+  useEffect(() => {
+    initAudioUnlock();
+  }, []);
 
   const currentOpponent =
     currentMatchIndex === 0 && selectedOpponent

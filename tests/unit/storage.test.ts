@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { getUniversalLeaderboard, saveToUniversalLeaderboard, getGameStats, saveGameStats } from '../../src/utils/storage';
+import { describe, it, expect, vi } from 'vitest';
+import { getUniversalLeaderboard, saveToUniversalLeaderboard, getGameStats } from '../../src/utils/storage';
 
 describe('Storage resilience under private browsing / quota errors', () => {
   it('does not throw and falls back to in-memory state when localStorage throws', () => {

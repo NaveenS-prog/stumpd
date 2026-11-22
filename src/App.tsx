@@ -283,9 +283,15 @@ export default function App() {
       />
 
       {/* Footer */}
-      <footer className="bg-[#0A1813] border-t border-[#1F3F32] py-3 px-4 text-center">
-        <p className="text-[11px] font-mono text-turf-500">
-          STUMPD. • Cricket XI Drafting &amp; Tournament Strategy • 599 Verified Legends
+      <footer className="bg-[#0A1813] border-t border-[#1F3F32] py-4 px-4 text-center space-y-1">
+        <p className="text-[11px] font-mono text-turf-400 font-medium">
+          STUMPD. • Tactical Cricket XI Drafting &amp; 7-0 Gauntlet Strategy
+        </p>
+        <p className="text-[10px] font-mono text-turf-500">
+          Unofficial fan project. Not affiliated with BCCI, ICC, IPL, or any official team/franchise.
+        </p>
+        <p className="text-[10px] font-mono text-turf-600">
+          Historical cricket match statistics and records inspired by open data from Cricsheet.
         </p>
       </footer>
     </div>

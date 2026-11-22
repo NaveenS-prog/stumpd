@@ -58,6 +58,29 @@ export async function copyToClipboard(text: string): Promise<boolean> {
   }
 }
 
+export async function shareCampaignResult(
+  text: string,
+  title = 'Stumpd Cricket Challenge'
+): Promise<'shared' | 'copied' | 'failed'> {
+  const url =
+    typeof window !== 'undefined' && window.location.origin && window.location.origin !== 'null'
+      ? window.location.origin
+      : 'https://stumpd.pages.dev';
+  const fullText = `${text}\n\n🏏 Play Stumpd: ${url}`;
+
+  if (typeof navigator !== 'undefined' && navigator.share) {
+    try {
+      await navigator.share({ title, text: fullText, url });
+      return 'shared';
+    } catch {
+      // User cancelled share or rejected -> attempt clipboard fallback
+    }
+  }
+
+  const copied = await copyToClipboard(fullText);
+  return copied ? 'copied' : 'failed';
+}
+
 export function generateTeamCanvasCard(
   userXI: Player[],
   captainId: string | null,

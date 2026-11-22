@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Player } from '../../types/player';
 import { MatchResult, OpponentTeam } from '../../types/tournament';
 import { TrophyHero } from './TrophyHero';
-import { formatEmojiGrid, copyToClipboard, generateTeamCanvasCard } from '../../utils/share';
+import { formatEmojiGrid, shareCampaignResult, generateTeamCanvasCard } from '../../utils/share';
 import { calculateUniversalTeamScore } from '../../engine/teamScore';
 import { saveToUniversalLeaderboard, getUniversalLeaderboard } from '../../utils/storage';
 import { UniversalScoreboardModal } from '../scoreboard/UniversalScoreboardModal';
@@ -24,7 +24,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
   gameMode,
   onPlayAgain,
 }) => {
-  const [copied, setCopied] = useState(false);
+  const [shareStatus, setShareStatus] = useState<'idle' | 'shared' | 'copied'>('idle');
   const [isScoreboardOpen, setIsScoreboardOpen] = useState(false);
   const [teamName, setTeamName] = useState(`${gameMode} XI`);
   const [creatorName, setCreatorName] = useState('');
@@ -75,16 +75,16 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
     userXI.reduce((acc, p) => acc + (p.battingRating + p.bowlingRating) / 2, 0) / userXI.length
   );
 
-  const handleCopyGrid = async () => {
+  const handleShareGrid = async () => {
     const outcomes = matchResults.map((r) => r.won);
     const allPerformers = matchResults.flatMap((r) => r.topPerformers || []);
     const mvp = allPerformers.length > 0 ? allPerformers[0].playerName : undefined;
     const todayStr = gameMode === 'Daily Stumpd' ? new Date().toISOString().split('T')[0] : undefined;
     const text = formatEmojiGrid(outcomes, gameMode, avgRating, todayStr, mvp);
-    const success = await copyToClipboard(text);
-    if (success) {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
+    const result = await shareCampaignResult(text, `Stumpd ${gameMode} XI`);
+    if (result === 'shared' || result === 'copied') {
+      setShareStatus(result);
+      setTimeout(() => setShareStatus('idle'), 2500);
     }
   };
 
@@ -315,10 +315,16 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={handleCopyGrid}
+            onClick={handleShareGrid}
             className="py-2.5 px-4 rounded-xl bg-gold-400 hover:bg-gold-300 text-turf-950 font-black text-xs uppercase tracking-wider transition-all flex items-center gap-2 shadow-md"
           >
-            <span>{copied ? '✓ Copied to Clipboard!' : '📋 Share Result'}</span>
+            <span>
+              {shareStatus === 'shared'
+                ? '✓ Shared!'
+                : shareStatus === 'copied'
+                ? '✓ Copied to Clipboard!'
+                : '📋 Share Result'}
+            </span>
           </button>
 
           <button

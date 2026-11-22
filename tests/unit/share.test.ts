@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { formatEmojiGrid } from '../../src/utils/share';
+import { describe, it, expect, vi } from 'vitest';
+import { formatEmojiGrid, shareCampaignResult } from '../../src/utils/share';
 
 describe('Social Share Formatter', () => {
   it('formats tournament match outcomes into a clean emoji grid string', () => {
@@ -16,5 +16,20 @@ describe('Social Share Formatter', () => {
     expect(text).toContain('Daily Stumpd');
     expect(text).toContain('2026-11-04');
     expect(text).toContain('🟩🟩🟩🟩🟩🟩🟩');
+  });
+
+  it('invokes navigator.share with playable link when available on mobile', async () => {
+    const shareMock = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'share', {
+      value: shareMock,
+      configurable: true,
+      writable: true,
+    });
+
+    const res = await shareCampaignResult('🟩🟩🟩 7-0');
+    expect(res).toBe('shared');
+    expect(shareMock).toHaveBeenCalled();
+    const callArgs = shareMock.mock.calls[0][0];
+    expect(callArgs.text).toContain('Play Stumpd:');
   });
 });

@@ -9,6 +9,7 @@ import { TeamSheet } from './components/draft/TeamSheet';
 import { LineupReorderModal } from './components/draft/LineupReorderModal';
 import { MatchScreen } from './components/match/MatchScreen';
 import { ResultsScreen } from './components/results/ResultsScreen';
+import { UniversalScoreboardModal } from './components/scoreboard/UniversalScoreboardModal';
 import { SLOTS } from './data/slots';
 import { VENUES } from './data/venues';
 
@@ -51,6 +52,7 @@ export default function App() {
   } = useStumpdGame();
 
   const [isReorderModalOpen, setIsReorderModalOpen] = useState(false);
+  const [isScoreboardOpen, setIsScoreboardOpen] = useState(false);
 
   const currentOpponent =
     currentMatchIndex === 0 && selectedOpponent
@@ -94,6 +96,14 @@ export default function App() {
           </button>
 
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsScoreboardOpen(true)}
+              className="py-1.5 px-3 rounded-lg bg-[#12261E] hover:bg-[#1A382C] border border-gold-400/40 text-xs font-mono text-gold-300 hover:text-gold-200 transition-all flex items-center gap-1.5"
+            >
+              <span>🏆 Scoreboard</span>
+            </button>
+
             <button
               type="button"
               onClick={toggleMute}
@@ -261,6 +271,11 @@ export default function App() {
           />
         )}
       </main>
+
+      <UniversalScoreboardModal
+        isOpen={isScoreboardOpen}
+        onClose={() => setIsScoreboardOpen(false)}
+      />
 
       {/* Footer */}
       <footer className="bg-[#0A1813] border-t border-[#1F3F32] py-3 px-4 text-center">

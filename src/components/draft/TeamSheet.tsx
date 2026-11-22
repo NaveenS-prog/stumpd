@@ -1,6 +1,7 @@
 import { SlotDefinition } from '../../types/game';
 import { Player } from '../../types/player';
 import { getActiveSynergies } from '../../data/synergies';
+import { calculateUniversalTeamScore } from '../../engine/teamScore';
 
 interface TeamSheetProps {
   slots: SlotDefinition[];
@@ -21,6 +22,7 @@ export const TeamSheet: React.FC<TeamSheetProps> = ({
 }) => {
   const isComplete = picks.length === slots.length;
   const activeSynergies = getActiveSynergies(picks);
+  const teamScore = calculateUniversalTeamScore(picks, captainId);
 
   return (
     <div className="w-full bg-[#12261E] border border-[#1F3F32] rounded-2xl p-4 sm:p-5 shadow-2xl">
@@ -44,6 +46,39 @@ export const TeamSheet: React.FC<TeamSheetProps> = ({
           </button>
         )}
       </div>
+
+      {/* Live Team Power Meter */}
+      {picks.length > 0 && (
+        <div className="mb-3 p-3 rounded-xl bg-[#0A1813] border border-[#1F3F32]">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-turf-400 font-bold">
+              ⚡ Live Team Score &amp; Balance
+            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-black font-mono text-gold-400">
+                {teamScore.totalScore}/1000
+              </span>
+              <span className="text-[10px] font-black font-mono px-1.5 py-0.5 rounded bg-gold-400/20 text-gold-300 border border-gold-400/30">
+                GRADE {teamScore.grade}
+              </span>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-1.5 text-[10px] font-mono text-center">
+            <div className="bg-turf-950/70 p-1 rounded border border-turf-800">
+              <span className="text-turf-400 block">BAT</span>
+              <span className="font-bold text-white">{teamScore.battingIndex}</span>
+            </div>
+            <div className="bg-turf-950/70 p-1 rounded border border-turf-800">
+              <span className="text-turf-400 block">BOWL</span>
+              <span className="font-bold text-white">{teamScore.bowlingIndex}</span>
+            </div>
+            <div className="bg-turf-950/70 p-1 rounded border border-turf-800">
+              <span className="text-turf-400 block">BALANCE</span>
+              <span className="font-bold text-white">{teamScore.balanceIndex}%</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {activeSynergies.length > 0 && (
         <div className="mb-3 space-y-1.5">

@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Player } from '../../types/player';
 import { MatchResult, OpponentTeam } from '../../types/tournament';
 import { TrophyHero } from './TrophyHero';
 import { formatEmojiGrid, copyToClipboard, generateTeamCanvasCard } from '../../utils/share';
+import { calculateUniversalTeamScore } from '../../engine/teamScore';
+import { saveToUniversalLeaderboard } from '../../utils/storage';
+import { UniversalScoreboardModal } from '../scoreboard/UniversalScoreboardModal';
 
 interface ResultsScreenProps {
   userXI: Player[];
@@ -22,6 +25,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
   onPlayAgain,
 }) => {
   const [copied, setCopied] = useState(false);
+  const [isScoreboardOpen, setIsScoreboardOpen] = useState(false);
 
   const winsCount = matchResults.filter((r) => r.won).length;
   const totalMatches = matchResults.length;
@@ -32,6 +36,27 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
   const primaryLossIdx = matchResults.findIndex((r) => !r.won);
   const primaryLoss = primaryLossIdx !== -1 ? matchResults[primaryLossIdx] : null;
   const primaryLossOpponent = primaryLossIdx !== -1 ? opponents[primaryLossIdx] : null;
+
+  const teamScore = calculateUniversalTeamScore(userXI, captainId);
+
+  useEffect(() => {
+    if (userXI.length > 0) {
+      const isInvincible = winsCount === totalMatches && totalMatches >= 7;
+      const captain = userXI.find((p) => p.id === captainId);
+      saveToUniversalLeaderboard({
+        teamName: `${gameMode} XI`,
+        mode: gameMode,
+        totalScore: teamScore.totalScore,
+        grade: teamScore.grade,
+        matchesWon: winsCount,
+        totalMatches: totalMatches,
+        captainName: captain?.name || 'Unassigned',
+        date: new Date().toLocaleDateString(),
+        synergiesCount: Math.round(teamScore.synergyPoints / 30),
+        isInvincible,
+      });
+    }
+  }, []);
 
   const avgRating = Math.round(
     userXI.reduce((acc, p) => acc + (p.battingRating + p.bowlingRating) / 2, 0) / userXI.length
@@ -100,6 +125,76 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
           </div>
         </div>
       )}
+
+      {/* Universal Team Score & Rating Card */}
+      <div className="bg-gradient-to-r from-[#12261E] via-[#0A1813] to-[#12261E] border-2 border-gold-400/60 rounded-3xl p-6 mb-8 shadow-2xl relative overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#1F3F32] mb-4">
+          <div>
+            <span className="text-[10px] font-mono uppercase tracking-widest text-gold-400 font-extrabold block mb-1">
+              Universal Team Rating &amp; Balance
+            </span>
+            <div className="flex items-center gap-2.5">
+              <span className="text-3xl sm:text-4xl font-black text-white font-mono">
+                {teamScore.totalScore}
+                <span className="text-sm font-normal text-turf-400">/1000</span>
+              </span>
+              <span className="text-xs font-black font-mono px-2.5 py-1 rounded-full bg-gold-400 text-black shadow-md">
+                GRADE {teamScore.grade}
+              </span>
+            </div>
+            <p className="text-xs text-turf-300 mt-1 font-mono">
+              Batting: {teamScore.battingIndex} • Bowling: {teamScore.bowlingIndex} • Balance: {teamScore.balanceIndex}%
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setIsScoreboardOpen(true)}
+            className="shrink-0 px-5 py-3 rounded-xl bg-gold-400 hover:bg-gold-300 text-turf-950 font-black text-xs uppercase tracking-wider transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2"
+          >
+            <span>🏆 View Universal Scoreboard</span>
+          </button>
+        </div>
+
+        {/* Strengths & Vulnerabilities */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+          {teamScore.strengths.length > 0 && (
+            <div className="bg-turf-950/70 p-3 rounded-xl border border-emerald-900/40">
+              <span className="font-mono font-bold text-emerald-400 uppercase text-[10px] block mb-1.5">
+                Tactical Strengths
+              </span>
+              <ul className="space-y-1 text-turf-200 font-mono text-[11px]">
+                {teamScore.strengths.map((s, idx) => (
+                  <li key={idx} className="flex items-center gap-1.5">
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {teamScore.vulnerabilities.length > 0 && (
+            <div className="bg-turf-950/70 p-3 rounded-xl border border-red-950/40">
+              <span className="font-mono font-bold text-red-400 uppercase text-[10px] block mb-1.5">
+                Tactical Vulnerabilities
+              </span>
+              <ul className="space-y-1 text-red-200/90 font-mono text-[11px]">
+                {teamScore.vulnerabilities.map((v, idx) => (
+                  <li key={idx} className="flex items-center gap-1.5">
+                    {v}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <UniversalScoreboardModal
+        isOpen={isScoreboardOpen}
+        onClose={() => setIsScoreboardOpen(false)}
+        currentUserScore={teamScore.totalScore}
+      />
 
       {/* Share Actions Bar */}
       <div className="bg-turf-900 border border-turf-700 rounded-2xl p-4 mb-8 shadow-xl flex flex-wrap items-center justify-between gap-3">

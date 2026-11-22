@@ -93,3 +93,110 @@ export function markDailyCompletedToday(
 
   recordTournamentFinish(result.won, result.matchesWon);
 }
+
+export interface StoredLeaderboardEntry {
+  id: string;
+  teamName: string;
+  mode: string;
+  totalScore: number;
+  grade: string;
+  matchesWon: number;
+  totalMatches: number;
+  captainName: string;
+  date: string;
+  synergiesCount: number;
+  isInvincible: boolean;
+}
+
+const STORAGE_KEY_LEADERBOARD = 'stumpd_universal_leaderboard_v1';
+
+const BENCHMARK_LEADERBOARD: StoredLeaderboardEntry[] = [
+  {
+    id: 'bench-1',
+    teamName: '2003 Invincible Australia',
+    mode: 'International',
+    totalScore: 955,
+    grade: 'S+',
+    matchesWon: 7,
+    totalMatches: 7,
+    captainName: 'Ricky Ponting',
+    date: 'Historic Benchmark',
+    synergiesCount: 2,
+    isInvincible: true,
+  },
+  {
+    id: 'bench-2',
+    teamName: '2011 World Champions India',
+    mode: 'International',
+    totalScore: 942,
+    grade: 'S+',
+    matchesWon: 7,
+    totalMatches: 7,
+    captainName: 'MS Dhoni',
+    date: 'Historic Benchmark',
+    synergiesCount: 2,
+    isInvincible: true,
+  },
+  {
+    id: 'bench-3',
+    teamName: '1984 West Indies Pace Battery',
+    mode: 'International',
+    totalScore: 934,
+    grade: 'S+',
+    matchesWon: 7,
+    totalMatches: 7,
+    captainName: 'Clive Lloyd',
+    date: 'Historic Benchmark',
+    synergiesCount: 1,
+    isInvincible: true,
+  },
+  {
+    id: 'bench-4',
+    teamName: '2018 CSK Dynasty',
+    mode: 'IPL',
+    totalScore: 898,
+    grade: 'S',
+    matchesWon: 7,
+    totalMatches: 7,
+    captainName: 'MS Dhoni',
+    date: 'Historic Benchmark',
+    synergiesCount: 2,
+    isInvincible: true,
+  },
+];
+
+export function getUniversalLeaderboard(): StoredLeaderboardEntry[] {
+  if (typeof window === 'undefined') return [...BENCHMARK_LEADERBOARD];
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_LEADERBOARD);
+    if (!raw) return [...BENCHMARK_LEADERBOARD];
+    const userEntries: StoredLeaderboardEntry[] = JSON.parse(raw);
+    const combined = [...userEntries, ...BENCHMARK_LEADERBOARD];
+    return combined.sort((a, b) => b.totalScore - a.totalScore);
+  } catch {
+    return [...BENCHMARK_LEADERBOARD];
+  }
+}
+
+export function saveToUniversalLeaderboard(
+  entry: Omit<StoredLeaderboardEntry, 'id'>
+): StoredLeaderboardEntry {
+  const newEntry: StoredLeaderboardEntry = {
+    ...entry,
+    id: `run-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+  };
+
+  if (typeof window === 'undefined') return newEntry;
+
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_LEADERBOARD);
+    const userEntries: StoredLeaderboardEntry[] = raw ? JSON.parse(raw) : [];
+    userEntries.push(newEntry);
+    userEntries.sort((a, b) => b.totalScore - a.totalScore);
+    localStorage.setItem(STORAGE_KEY_LEADERBOARD, JSON.stringify(userEntries.slice(0, 50)));
+  } catch {
+    // Ignore
+  }
+
+  return newEntry;
+}

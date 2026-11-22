@@ -122,7 +122,21 @@ export function markDailyCompletedToday(
     date: targetDate,
   };
 
-  recordTournamentFinish(result.won, result.matchesWon);
+  stats.gamesPlayed += 1;
+  stats.matchesWon += result.matchesWon;
+  stats.matchesLost += result.won ? 0 : 1;
+
+  if (result.won) {
+    stats.tournamentsWon += 1;
+    stats.currentStreak += 1;
+    if (stats.currentStreak > stats.maxStreak) {
+      stats.maxStreak = stats.currentStreak;
+    }
+  } else {
+    stats.currentStreak = 0;
+  }
+
+  saveGameStats(stats);
 }
 
 export interface StoredLeaderboardEntry {

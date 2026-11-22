@@ -3,9 +3,12 @@
  */
 
 export function getDailyDateString(date: Date = new Date()): string {
-  const yyyy = date.getUTCFullYear();
-  const mm = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const dd = String(date.getUTCDate()).padStart(2, '0');
+  // Offset by UTC + 5 hours 30 minutes for Indian Standard Time (IST)
+  const istOffsetMs = 5.5 * 60 * 60 * 1000;
+  const istTime = new Date(date.getTime() + istOffsetMs);
+  const yyyy = istTime.getUTCFullYear();
+  const mm = String(istTime.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(istTime.getUTCDate()).padStart(2, '0');
   return `${yyyy}-${mm}-${dd}`;
 }
 

@@ -165,7 +165,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
             onClick={() => setIsScoreboardOpen(true)}
             className="shrink-0 px-5 py-3 rounded-xl bg-gold-400 hover:bg-gold-300 text-turf-950 font-black text-xs uppercase tracking-wider transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2"
           >
-            <span>🏆 View Universal Scoreboard</span>
+            <span>🏆 View My Best Teams</span>
           </button>
         </div>
 
@@ -209,12 +209,12 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
           <span className="text-xl">✍️</span>
           <div>
             <h3 className="text-white font-mono font-bold text-sm uppercase tracking-wide">
-              {isSaved ? 'Squad Immortalized on Universal Scoreboard' : 'Name Your XI & Save to Scoreboard'}
+              {isSaved ? 'Squad Immortalized in My Best Teams' : 'Name Your XI & Save to My Best Teams'}
             </h3>
             <p className="text-xs text-turf-300 font-mono">
               {isSaved
-                ? 'Saved to persistent storage! Visible on the Universal Scoreboard across refreshes.'
-                : 'Give your drafted lineup a custom team name to rank it on the Universal Scoreboard.'}
+                ? 'Saved to local browser database! Visible in My Best Teams across refreshes.'
+                : 'Give your drafted lineup a custom team name to rank it in My Best Teams.'}
             </p>
           </div>
         </div>
@@ -239,7 +239,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
                 onClick={() => setIsScoreboardOpen(true)}
                 className="px-4 py-2.5 rounded-xl bg-gold-400 hover:bg-gold-300 text-black font-black text-xs uppercase tracking-wider font-mono transition-all shadow-md flex items-center gap-1.5"
               >
-                <span>🏆 View Scoreboard</span>
+                <span>🏆 View My Best Teams</span>
               </button>
               <button
                 type="button"
@@ -288,7 +288,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
                 type="submit"
                 className="px-6 py-2.5 rounded-xl bg-gold-400 hover:bg-gold-300 text-turf-950 font-black text-xs uppercase tracking-wider font-mono transition-all shadow-lg active:scale-95 flex items-center justify-center gap-1.5"
               >
-                <span>💾 Save XI to Leaderboard</span>
+                <span>💾 Save XI to My Best Teams</span>
               </button>
             </div>
           </form>

@@ -37,7 +37,7 @@ describe('Universal Scoreboard & Team Naming Flow', () => {
   it('renders clean empty state in UniversalScoreboardModal when no teams exist', () => {
     render(<UniversalScoreboardModal isOpen={true} onClose={vi.fn()} />);
 
-    expect(screen.getByText(/Scoreboard Awaiting Its First Champion/i)).toBeInTheDocument();
+    expect(screen.getByText(/My Best Teams Awaiting Its First Champion/i)).toBeInTheDocument();
     expect(screen.getByText(/No user teams saved yet/i)).toBeInTheDocument();
   });
 
@@ -78,7 +78,7 @@ describe('Universal Scoreboard & Team Naming Flow', () => {
 
     // Initial check: not saved yet
     expect(getUniversalLeaderboard()).toHaveLength(0);
-    expect(screen.getByText(/Name Your XI & Save to Scoreboard/i)).toBeInTheDocument();
+    expect(screen.getByText(/Name Your XI & Save to My Best Teams/i)).toBeInTheDocument();
 
     const teamNameInput = screen.getByPlaceholderText(/e.g. Mumbai Mavericks/i);
     const coachInput = screen.getByPlaceholderText(/e.g. Coach Naveen/i);
@@ -86,7 +86,7 @@ describe('Universal Scoreboard & Team Naming Flow', () => {
     fireEvent.change(teamNameInput, { target: { value: 'Delhi Dominators' } });
     fireEvent.change(coachInput, { target: { value: 'Master Tactician' } });
 
-    const saveButton = screen.getByRole('button', { name: /Save XI to Leaderboard/i });
+    const saveButton = screen.getByRole('button', { name: /Save XI to My Best Teams/i });
     fireEvent.click(saveButton);
 
     // Should now be saved in storage and confirmed on screen

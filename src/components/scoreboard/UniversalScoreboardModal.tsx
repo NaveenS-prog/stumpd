@@ -43,10 +43,10 @@ export const UniversalScoreboardModal: React.FC<UniversalScoreboardModalProps> =
             <span className="text-2xl">🏆</span>
             <div>
               <h2 className="text-lg sm:text-xl font-black text-white font-mono uppercase tracking-wide">
-                Universal Scoreboard
+                My Best Teams
               </h2>
               <span className="text-xs text-turf-400 font-mono">
-                All-Time Playing XI Power Rankings (0–1000 Scale)
+                Your All-Time Playing XI Power Rankings (0–1000 Scale)
               </span>
             </div>
           </div>
@@ -65,10 +65,10 @@ export const UniversalScoreboardModal: React.FC<UniversalScoreboardModalProps> =
             <div className="py-12 px-4 text-center flex flex-col items-center justify-center bg-turf-950/60 rounded-2xl border border-dashed border-turf-800 my-4">
               <span className="text-4xl mb-3">🏏</span>
               <h3 className="text-white font-mono font-bold text-sm sm:text-base mb-1">
-                Scoreboard Awaiting Its First Champion
+                My Best Teams Awaiting Its First Champion
               </h3>
               <p className="text-turf-400 text-xs font-mono max-w-md leading-relaxed">
-                No user teams saved yet. Complete a campaign, name your custom drafted XI on the results screen, and save it to immortalize your squad on the universal leaderboard!
+                No user teams saved yet. Complete a campaign, name your custom drafted XI on the results screen, and save it here to track your all-time highest-scoring lineups!
               </p>
             </div>
           ) : (

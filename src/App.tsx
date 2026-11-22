@@ -101,7 +101,7 @@ export default function App() {
               onClick={() => setIsScoreboardOpen(true)}
               className="py-1.5 px-3 rounded-lg bg-[#12261E] hover:bg-[#1A382C] border border-gold-400/40 text-xs font-mono text-gold-300 hover:text-gold-200 transition-all flex items-center gap-1.5"
             >
-              <span>🏆 Scoreboard</span>
+              <span>🏆 My Best Teams</span>
             </button>
 
             <button

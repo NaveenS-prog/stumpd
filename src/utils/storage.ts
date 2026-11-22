@@ -17,6 +17,39 @@ export interface StoredGameStats {
 }
 
 const STORAGE_KEY_STATS = 'stumpd_career_stats_v1';
+const STORAGE_KEY_LEADERBOARD = 'stumpd_universal_leaderboard_v1';
+
+const memoryFallback: Record<string, string> = {};
+
+function safeGetItem(key: string): string | null {
+  if (typeof window === 'undefined') return memoryFallback[key] || null;
+  try {
+    const val = localStorage.getItem(key);
+    return val !== null ? val : (memoryFallback[key] || null);
+  } catch {
+    return memoryFallback[key] || null;
+  }
+}
+
+function safeSetItem(key: string, value: string): void {
+  memoryFallback[key] = value;
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // Fallback stored in memoryFallback
+  }
+}
+
+function safeRemoveItem(key: string): void {
+  delete memoryFallback[key];
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    // Ignore
+  }
+}
 
 const DEFAULT_STATS: StoredGameStats = {
   gamesPlayed: 0,
@@ -29,9 +62,8 @@ const DEFAULT_STATS: StoredGameStats = {
 };
 
 export function getGameStats(): StoredGameStats {
-  if (typeof window === 'undefined') return { ...DEFAULT_STATS };
   try {
-    const raw = localStorage.getItem(STORAGE_KEY_STATS);
+    const raw = safeGetItem(STORAGE_KEY_STATS);
     if (!raw) return { ...DEFAULT_STATS };
     const parsed = JSON.parse(raw);
     return {
@@ -45,11 +77,10 @@ export function getGameStats(): StoredGameStats {
 }
 
 export function saveGameStats(stats: StoredGameStats): void {
-  if (typeof window === 'undefined') return;
   try {
-    localStorage.setItem(STORAGE_KEY_STATS, JSON.stringify(stats));
+    safeSetItem(STORAGE_KEY_STATS, JSON.stringify(stats));
   } catch {
-    // Ignore storage quota or disabled storage
+    // Ignore
   }
 }
 
@@ -109,12 +140,9 @@ export interface StoredLeaderboardEntry {
   isInvincible: boolean;
 }
 
-const STORAGE_KEY_LEADERBOARD = 'stumpd_universal_leaderboard_v1';
-
 export function getUniversalLeaderboard(): StoredLeaderboardEntry[] {
-  if (typeof window === 'undefined') return [];
   try {
-    const raw = localStorage.getItem(STORAGE_KEY_LEADERBOARD);
+    const raw = safeGetItem(STORAGE_KEY_LEADERBOARD);
     if (!raw) return [];
     const userEntries: StoredLeaderboardEntry[] = JSON.parse(raw);
     return userEntries.sort((a, b) => b.totalScore - a.totalScore);
@@ -131,14 +159,12 @@ export function saveToUniversalLeaderboard(
     id: `run-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
   };
 
-  if (typeof window === 'undefined') return newEntry;
-
   try {
-    const raw = localStorage.getItem(STORAGE_KEY_LEADERBOARD);
+    const raw = safeGetItem(STORAGE_KEY_LEADERBOARD);
     const userEntries: StoredLeaderboardEntry[] = raw ? JSON.parse(raw) : [];
     userEntries.push(newEntry);
     userEntries.sort((a, b) => b.totalScore - a.totalScore);
-    localStorage.setItem(STORAGE_KEY_LEADERBOARD, JSON.stringify(userEntries.slice(0, 100)));
+    safeSetItem(STORAGE_KEY_LEADERBOARD, JSON.stringify(userEntries.slice(0, 100)));
   } catch {
     // Ignore storage issues
   }
@@ -147,10 +173,14 @@ export function saveToUniversalLeaderboard(
 }
 
 export function clearUniversalLeaderboard(): void {
-  if (typeof window === 'undefined') return;
   try {
-    localStorage.removeItem(STORAGE_KEY_LEADERBOARD);
+    safeRemoveItem(STORAGE_KEY_LEADERBOARD);
   } catch {
     // Ignore
   }
 }
+
+// Semantic aliases
+export const getMyScoreboard = getUniversalLeaderboard;
+export const saveToMyScoreboard = saveToUniversalLeaderboard;
+export const clearMyScoreboard = clearUniversalLeaderboard;

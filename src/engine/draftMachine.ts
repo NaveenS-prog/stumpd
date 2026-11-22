@@ -94,20 +94,20 @@ class DraftMachine {
       (p) => !pickedIds.has(p.id) && Boolean(p.iplCareers && p.iplCareers.length > 0)
     );
 
-    // 1. Direct Search (Franchise + IPL Era + Slot) - prefer strict primary role first
-    const directStrict = iplPool.filter(
-      (p) =>
-        matchesSlotRole(p, slot, true) &&
-        p.iplCareers!.some((c) => c.franchise === franchise && c.eras.includes(era))
-    );
-    if (directStrict.length > 0) return directStrict;
-
-    const directRelaxed = iplPool.filter(
+    // 1. Direct Search (Franchise + IPL Era + Slot) - return ALL viable candidates
+    const directMatches = iplPool.filter(
       (p) =>
         matchesSlotRole(p, slot, false) &&
         p.iplCareers!.some((c) => c.franchise === franchise && c.eras.includes(era))
     );
-    if (directRelaxed.length > 0) return directRelaxed;
+    if (directMatches.length > 0) {
+      return directMatches.sort((a, b) => {
+        const aStrict = matchesSlotRole(a, slot, true) ? 1 : 0;
+        const bStrict = matchesSlotRole(b, slot, true) ? 1 : 0;
+        if (aStrict !== bStrict) return bStrict - aStrict;
+        return (b.battingRating + b.bowlingRating) - (a.battingRating + a.bowlingRating);
+      });
+    }
 
     // 2. Smart Fallback strictly within IPL players
     // Strategy A: Adjacent IPL eras for same franchise
@@ -159,16 +159,18 @@ class DraftMachine {
     const matchesIntlEra = (p: Player, e: Era) =>
       p.internationalEras?.length ? p.internationalEras.includes(e) : Boolean(p.eras?.includes(e));
 
-    // 1. Direct Search - strict role first, then relaxed
-    const directStrict = intlPool.filter(
-      (p) => matchesSlotRole(p, slot, true) && matchesCountry(p) && matchesIntlEra(p, era)
-    );
-    if (directStrict.length > 0) return directStrict;
-
-    const directRelaxed = intlPool.filter(
+    // 1. Direct Search - return ALL viable candidates
+    const directMatches = intlPool.filter(
       (p) => matchesSlotRole(p, slot, false) && matchesCountry(p) && matchesIntlEra(p, era)
     );
-    if (directRelaxed.length > 0) return directRelaxed;
+    if (directMatches.length > 0) {
+      return directMatches.sort((a, b) => {
+        const aStrict = matchesSlotRole(a, slot, true) ? 1 : 0;
+        const bStrict = matchesSlotRole(b, slot, true) ? 1 : 0;
+        if (aStrict !== bStrict) return bStrict - aStrict;
+        return (b.battingRating + b.bowlingRating) - (a.battingRating + a.bowlingRating);
+      });
+    }
 
     // 2. Smart Fallback strictly within international players
     // Strategy A: Adjacent decade for same country

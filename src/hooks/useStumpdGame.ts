@@ -93,7 +93,7 @@ export function useStumpdGame() {
           existingPicks,
           gameMode
         );
-        setCurrentCandidates(eligible.slice(0, 4));
+        setCurrentCandidates(eligible);
         setIsSpinning(false);
         return;
       }
@@ -123,7 +123,7 @@ export function useStumpdGame() {
             existingPicks,
             gameMode
           );
-          setCurrentCandidates(eligible.slice(0, 4));
+          setCurrentCandidates(eligible);
           setIsSpinning(false);
         }
       }, 55);
@@ -134,14 +134,14 @@ export function useStumpdGame() {
   const startMode = useCallback((modeInput: string) => {
     let resolvedMode: GameMode = 'International';
     let mulligans = 3;
-    let targetScreen: GamePhase = 'match-setup';
+    let targetScreen: GamePhase = 'draft';
 
     const lower = modeInput.toLowerCase();
     if (lower.includes('ipl')) {
       resolvedMode = 'IPL';
       mulligans = 3;
       dailyRngRef.current = null;
-      targetScreen = 'match-setup';
+      targetScreen = 'draft';
     } else if (lower.includes('daily')) {
       resolvedMode = 'Daily Stumpd';
       mulligans = 0;
@@ -152,7 +152,7 @@ export function useStumpdGame() {
       resolvedMode = 'Practice Mode';
       mulligans = 99;
       dailyRngRef.current = null;
-      targetScreen = 'match-setup';
+      targetScreen = 'draft';
     } else if (lower === 'spin') {
       resolvedMode = 'International';
       mulligans = 3;
@@ -163,7 +163,7 @@ export function useStumpdGame() {
       resolvedMode = 'International';
       mulligans = 3;
       dailyRngRef.current = null;
-      targetScreen = 'match-setup';
+      targetScreen = 'draft';
     }
 
     const opps = resolvedMode === 'IPL' ? IPL_OPPONENTS : INTERNATIONAL_OPPONENTS;

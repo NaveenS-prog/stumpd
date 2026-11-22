@@ -43,14 +43,14 @@ export const CandidateList: React.FC<CandidateListProps> = ({
     <div className="w-full mb-6">
       <div className="flex items-center justify-between mb-2.5">
         <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-turf-300">
-          Available Candidates ({candidates.length})
+          Available Candidates ({candidates.length} Viable {candidates.length === 1 ? 'Option' : 'Options'})
         </span>
         <span className="text-[10px] text-turf-400 font-mono">
-          Tap player to draft into XI
+          Tap cricketer to draft into XI
         </span>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-2 max-h-[520px] overflow-y-auto pr-1">
         {candidates.map((player) => {
           const links = getCandidateSynergyLinks(player, currentPicks);
           return (

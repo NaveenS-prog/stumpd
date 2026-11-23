@@ -6,6 +6,7 @@ import { formatEmojiGrid, shareCampaignResult, generateTeamCanvasCard } from '..
 import { calculateUniversalTeamScore } from '../../engine/teamScore';
 import { getDailyDateString } from '../../engine/dailySeed';
 import { saveToUniversalLeaderboard, getUniversalLeaderboard } from '../../utils/storage';
+import { submitToGlobalLeaderboard, isSupabaseConfigured } from '../../services/supabase';
 import { UniversalScoreboardModal } from '../scoreboard/UniversalScoreboardModal';
 import { trackEvent } from '../../utils/analytics';
 
@@ -32,6 +33,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
   const [creatorName, setCreatorName] = useState('');
   const [isSaved, setIsSaved] = useState(false);
   const [savedRank, setSavedRank] = useState<number | null>(null);
+  const [isGlobalSynced, setIsGlobalSynced] = useState(false);
 
   const winsCount = matchResults.filter((r) => r.won).length;
   const totalMatches = matchResults.length;
@@ -78,6 +80,25 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
     const rank = leaderboard.findIndex((entry) => entry.id === savedEntry.id) + 1;
     setSavedRank(rank > 0 ? rank : 1);
     setIsSaved(true);
+
+    if (isSupabaseConfigured()) {
+      submitToGlobalLeaderboard({
+        teamName: finalTeamName,
+        creatorName: creatorName.trim() || undefined,
+        mode: gameMode,
+        totalScore: teamScore.totalScore,
+        grade: teamScore.grade,
+        matchesWon: winsCount,
+        totalMatches: totalMatches,
+        captainName: captain?.name || 'Unassigned',
+        synergiesCount: Math.round(teamScore.synergyPoints / 30),
+        isInvincible,
+      }).then(({ error }) => {
+        if (!error) {
+          setIsGlobalSynced(true);
+        }
+      });
+    }
   };
 
   const avgRating = Math.round(
@@ -178,7 +199,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
             onClick={() => setIsScoreboardOpen(true)}
             className="shrink-0 px-5 py-3 rounded-xl bg-gold-400 hover:bg-gold-300 text-turf-950 font-black text-xs uppercase tracking-wider transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2"
           >
-            <span>🏆 View My Best Teams</span>
+            <span>🏆 Universal Scoreboard</span>
           </button>
         </div>
 
@@ -222,12 +243,14 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
           <span className="text-xl">✍️</span>
           <div>
             <h3 className="text-white font-mono font-bold text-sm uppercase tracking-wide">
-              {isSaved ? 'Squad Immortalized in My Best Teams' : 'Name Your XI & Save to My Best Teams'}
+              {isSaved ? 'Squad Immortalized on the Scoreboard' : 'Name Your XI & Save to Scoreboard'}
             </h3>
             <p className="text-xs text-turf-300 font-mono">
               {isSaved
-                ? 'Saved to local browser database! Visible in My Best Teams across refreshes.'
-                : 'Give your drafted lineup a custom team name to rank it in My Best Teams.'}
+                ? isGlobalSynced
+                  ? 'Saved to local browser database and published live to Universal Supabase Leaderboard!'
+                  : 'Saved to local browser database! Visible across refreshes.'
+                : 'Give your drafted lineup a custom team name to rank it on the Universal Scoreboard.'}
             </p>
           </div>
         </div>
@@ -235,8 +258,10 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
         {isSaved ? (
           <div className="bg-turf-950/80 border border-gold-400/40 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-emerald-400 font-bold font-mono text-sm">✓ Saved to Database!</span>
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                <span className="text-emerald-400 font-bold font-mono text-sm">
+                  {isGlobalSynced ? '✓ Saved & Published to Global 🌍' : '✓ Saved to Database!'}
+                </span>
                 <span className="bg-gold-400 text-black text-[10px] font-black font-mono px-2 py-0.5 rounded uppercase">
                   Rank #{savedRank}
                 </span>
@@ -252,7 +277,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
                 onClick={() => setIsScoreboardOpen(true)}
                 className="px-4 py-2.5 rounded-xl bg-gold-400 hover:bg-gold-300 text-black font-black text-xs uppercase tracking-wider font-mono transition-all shadow-md flex items-center gap-1.5"
               >
-                <span>🏆 View My Best Teams</span>
+                <span>🏆 View Scoreboard</span>
               </button>
               <button
                 type="button"
@@ -301,7 +326,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
                 type="submit"
                 className="px-6 py-2.5 rounded-xl bg-gold-400 hover:bg-gold-300 text-turf-950 font-black text-xs uppercase tracking-wider font-mono transition-all shadow-lg active:scale-95 flex items-center justify-center gap-1.5"
               >
-                <span>💾 Save XI to My Best Teams</span>
+                <span>💾 Save XI to Scoreboard</span>
               </button>
             </div>
           </form>

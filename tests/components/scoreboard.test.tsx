@@ -8,6 +8,12 @@ import { clearUniversalLeaderboard, saveToUniversalLeaderboard, getUniversalLead
 import { INTERNATIONAL_OPPONENTS } from '../../src/data/opponents';
 import playersData from '../../src/data/players.json';
 
+vi.mock('../../src/services/supabase', () => ({
+  isSupabaseConfigured: vi.fn(() => false),
+  fetchGlobalLeaderboard: vi.fn(async () => ({ data: [], error: null })),
+  submitToGlobalLeaderboard: vi.fn(async () => ({ data: null, error: null })),
+}));
+
 describe('Universal Scoreboard & Team Naming Flow', () => {
   const allPlayers = playersData as unknown as Player[];
   const userXI = allPlayers.slice(0, 11);

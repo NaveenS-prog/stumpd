@@ -28,7 +28,13 @@ export interface NewGlobalLeaderboardEntry {
   isInvincible: boolean;
 }
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+function normalizeSupabaseUrl(url?: string): string {
+  if (!url) return '';
+  return url.replace(/\/rest\/v1\/?$/, '').replace(/\/+$/, '');
+}
+
+const rawSupabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseUrl = normalizeSupabaseUrl(rawSupabaseUrl);
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export function isSupabaseConfigured(): boolean {

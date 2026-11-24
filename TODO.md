@@ -1,7 +1,7 @@
 # 📋 Stumpd — Future Feature Roadmap & Prioritized To-Do List
 
-> Live Production: [stumped-two.vercel.app](https://stumped-two.vercel.app/)  
-> Repository: [github.com/NaveenS-prog/stumped](https://github.com/NaveenS-prog/stumped)
+> Live Production: [stumpd-app.vercel.app](https://stumpd-app.vercel.app/)  
+> Repository: [github.com/NaveenS-prog/stumpd](https://github.com/NaveenS-prog/stumpd)
 
 ---
 
@@ -30,7 +30,7 @@ Transform the interface from a generic dark sports layout into a distinctive, ta
 Allow two friends to challenge each other directly to draft custom Playing XIs and face off in an intense simulated showdown.
 
 - [ ] **Lobby & Matchmaking System**:
-  - **Room Creation**: Host creates a private 4-letter lobby code (e.g., `CRIC`) or direct shareable link (`stumped-two.vercel.app/vs/CRIC`).
+  - **Room Creation**: Host creates a private 4-letter lobby code (e.g., `CRIC`) or direct shareable link (`stumpd-app.vercel.app/vs/CRIC`).
   - **Realtime Sync**: Powered by Supabase Realtime Channels (WebSocket presence & broadcast events).
 - [ ] **Live Interactive Draft Modes**:
   - **Snake Draft**: Host picks 1st player, Friend picks 2nd & 3rd, Host picks 4th & 5th from shared candidate pools.

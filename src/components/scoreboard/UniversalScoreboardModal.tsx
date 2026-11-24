@@ -44,6 +44,15 @@ export const UniversalScoreboardModal: React.FC<UniversalScoreboardModalProps> =
     }
   }, [isOpen, activeTab, hasSupabase, loadGlobalLeaderboard]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const getGradeBadge = (grade: string) => {
@@ -62,7 +71,15 @@ export const UniversalScoreboardModal: React.FC<UniversalScoreboardModalProps> =
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="universal-scoreboard-title"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn"
+    >
       <div className="bg-[#0A1813] border-2 border-gold-400/60 rounded-3xl p-5 sm:p-6 w-full max-w-2xl shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
         {/* Background glow */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-gold-400/5 rounded-full blur-3xl pointer-events-none" />
@@ -72,7 +89,7 @@ export const UniversalScoreboardModal: React.FC<UniversalScoreboardModalProps> =
           <div className="flex items-center gap-2.5">
             <span className="text-2xl">🏆</span>
             <div>
-              <h2 className="text-lg sm:text-xl font-black text-white font-mono uppercase tracking-wide">
+              <h2 id="universal-scoreboard-title" className="text-lg sm:text-xl font-black text-white font-mono uppercase tracking-wide">
                 Universal Scoreboard
               </h2>
               <span className="text-xs text-turf-400 font-mono">
@@ -83,6 +100,7 @@ export const UniversalScoreboardModal: React.FC<UniversalScoreboardModalProps> =
           <button
             type="button"
             onClick={onClose}
+            aria-label="Close Scoreboard"
             className="p-2 rounded-xl bg-turf-900 border border-turf-700 text-turf-300 hover:text-white transition-all text-xs font-mono"
           >
             ✕ Close

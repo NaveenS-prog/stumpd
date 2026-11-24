@@ -20,6 +20,15 @@ export const LineupReorderModal: React.FC<LineupReorderModalProps> = ({
 }) => {
   const [ordered, setOrdered] = useState<Player[]>([...players]);
 
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const moveUp = (index: number) => {
@@ -46,11 +55,19 @@ export const LineupReorderModal: React.FC<LineupReorderModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="lineup-modal-title"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
+    >
       <div className="bg-turf-900 border border-turf-700 rounded-2xl w-full max-w-lg p-6 shadow-2xl">
         <div className="flex items-center justify-between pb-3 border-b border-turf-800 mb-4">
           <div>
-            <h2 className="text-lg font-bold text-white uppercase font-mono">
+            <h2 id="lineup-modal-title" className="text-lg font-bold text-white uppercase font-mono">
               Tactical Lineup & Captain
             </h2>
             <p className="text-xs text-turf-300">
@@ -60,6 +77,7 @@ export const LineupReorderModal: React.FC<LineupReorderModalProps> = ({
           <button
             type="button"
             onClick={onClose}
+            aria-label="Close lineup modal"
             className="text-turf-400 hover:text-white text-lg font-bold p-1"
           >
             ✕

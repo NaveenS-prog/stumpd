@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <radialGradient id="ballGlow" cx="30%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#F5BE58"/>
+      <stop offset="60%" stop-color="#E5A93B"/>
+      <stop offset="100%" stop-color="#C2841E"/>
+    </radialGradient>
+  </defs>
+  <rect width="32" height="32" rx="8" fill="#07110D"/>
+  <!-- Cricket Ball -->
+  <circle cx="16" cy="16" r="11" fill="url(#ballGlow)"/>
+  <!-- Seam stitch curve -->
+  <path d="M16 5 C11 10, 11 22, 16 27" fill="none" stroke="#07110D" stroke-width="1.2" stroke-dasharray="1 1.2"/>
+  <path d="M16 5 C21 10, 21 22, 16 27" fill="none" stroke="#07110D" stroke-width="1.2" stroke-dasharray="1 1.2"/>
+  <circle cx="16" cy="16" r="1.5" fill="#07110D"/>
+</svg>

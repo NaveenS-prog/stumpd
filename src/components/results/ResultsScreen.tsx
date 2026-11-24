@@ -307,7 +307,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
                   maxLength={40}
                   value={creatorName}
                   onChange={(e) => setCreatorName(e.target.value)}
-                  placeholder="e.g. Coach Naveen, Captain Cool"
+                  placeholder="e.g. Tactical Mastermind, Captain Cool"
                   className="w-full bg-turf-950 border border-turf-700 focus:border-gold-400 rounded-xl px-3.5 py-2.5 text-white font-mono text-xs placeholder:text-turf-600 outline-none transition-all"
                 />
               </div>

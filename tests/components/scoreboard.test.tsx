@@ -98,7 +98,7 @@ describe('Universal Scoreboard & Team Naming Flow', () => {
     expect(screen.getByText(/Name Your XI & Save to Scoreboard/i)).toBeInTheDocument();
 
     const teamNameInput = screen.getByPlaceholderText(/e.g. Mumbai Mavericks/i);
-    const coachInput = screen.getByPlaceholderText(/e.g. Coach Naveen/i);
+    const coachInput = screen.getByPlaceholderText(/Captain Cool/i);
 
     fireEvent.change(teamNameInput, { target: { value: 'Delhi Dominators' } });
     fireEvent.change(coachInput, { target: { value: 'Master Tactician' } });

@@ -66,7 +66,7 @@ export const LiveSimProgress: React.FC<LiveSimProgressProps> = ({
   const currentPhase = phases[phaseIndex] || phases[0];
 
   return (
-    <div className="bg-gradient-to-b from-turf-900 via-turf-950 to-turf-900 border-2 border-gold-400/70 rounded-2xl p-6 md:p-8 my-6 text-center shadow-[0_0_30px_rgba(234,179,8,0.25)] flex flex-col items-center justify-center relative overflow-hidden">
+    <div className="bg-gradient-to-b from-turf-900 via-turf-950 to-turf-900 border-2 border-gold-400/70 rounded-2xl p-4 sm:p-6 md:p-8 my-4 sm:my-6 text-center shadow-[0_0_30px_rgba(234,179,8,0.25)] flex flex-col items-center justify-center relative overflow-hidden">
       {/* Background glow pulse */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-80 h-32 bg-gold-400/10 blur-3xl pointer-events-none" />
 
@@ -75,19 +75,19 @@ export const LiveSimProgress: React.FC<LiveSimProgressProps> = ({
         <button
           type="button"
           onClick={onSkip}
-          className="absolute top-3 right-3 text-[11px] font-mono font-bold text-turf-300 hover:text-gold-400 bg-turf-800 hover:bg-turf-700 px-3 py-1.5 rounded-lg border border-turf-600 transition-all flex items-center gap-1 shadow-sm"
+          className="absolute top-3 right-3 text-[10px] sm:text-[11px] font-mono font-bold text-turf-300 hover:text-gold-400 bg-turf-800 hover:bg-turf-700 px-2.5 sm:px-3 py-1.5 rounded-lg border border-turf-600 transition-all flex items-center gap-1 shadow-sm"
         >
           <span>⚡ Skip to Result</span>
         </button>
       )}
 
       {/* Stage Badge */}
-      <span className="text-[10px] font-mono uppercase tracking-widest text-gold-400 font-extrabold px-3 py-1 rounded-full bg-gold-400/10 border border-gold-400/30 mb-3 animate-pulse">
+      <span className="text-[9px] sm:text-[10px] font-mono uppercase tracking-widest text-gold-400 font-extrabold px-2.5 sm:px-3 py-1 rounded-full bg-gold-400/10 border border-gold-400/30 mb-2 sm:mb-3 animate-pulse">
         {currentPhase.tag}
       </span>
 
       {/* Phase Title */}
-      <h3 className="text-xl md:text-2xl font-black text-white tracking-wide uppercase font-mono mb-2">
+      <h3 className="text-lg sm:text-xl md:text-2xl font-black text-white tracking-wide uppercase font-mono mb-2">
         {currentPhase.title}
       </h3>
 

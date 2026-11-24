@@ -22,22 +22,22 @@ export const PitchCard: React.FC<PitchCardProps> = ({ venue }) => {
   };
 
   return (
-    <div className="bg-turf-900 border border-turf-700/80 rounded-xl p-4 shadow-lg">
-      <div className="flex items-center justify-between mb-2">
-        <div>
-          <span className="text-[10px] font-mono uppercase text-turf-400 tracking-wider">
+    <div className="bg-turf-900 border border-turf-700/80 rounded-xl p-3.5 sm:p-4 shadow-lg">
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <div className="min-w-0">
+          <span className="text-[10px] font-mono uppercase text-turf-400 tracking-wider block">
             Match Venue & Pitch Surface
           </span>
-          <h3 className="text-base font-bold text-white">
+          <h3 className="text-sm sm:text-base font-bold text-white truncate">
             {venue.name}
           </h3>
-          <p className="text-xs text-turf-400">
+          <p className="text-xs text-turf-400 truncate">
             {venue.city}, {venue.country}
           </p>
         </div>
 
         <span
-          className={`text-xs font-mono font-bold uppercase px-2.5 py-1 rounded-md border ${getBadgeColor(
+          className={`text-[10px] sm:text-xs font-mono font-bold uppercase px-2 sm:px-2.5 py-1 rounded-md border shrink-0 ${getBadgeColor(
             venue.pitchType
           )}`}
         >

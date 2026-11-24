@@ -18,7 +18,7 @@ export const TrophyHero: React.FC<TrophyHeroProps> = ({
 
   return (
     <div
-      className={`relative overflow-hidden rounded-3xl p-8 text-center shadow-2xl mb-8 border-2 transition-all ${
+      className={`relative overflow-hidden rounded-2xl sm:rounded-3xl p-5 sm:p-8 text-center shadow-2xl mb-6 sm:mb-8 border-2 transition-all ${
         isInvincible
           ? 'bg-gradient-to-b from-[#1C1805] via-turf-950 to-[#1C1805] border-gold-400 shadow-[0_0_35px_rgba(234,179,8,0.4)]'
           : isNearMiss
@@ -38,12 +38,12 @@ export const TrophyHero: React.FC<TrophyHeroProps> = ({
       />
 
       {/* Hero Icon */}
-      <div className="text-6xl md:text-7xl mb-4 animate-bounce">
+      <div className="text-5xl sm:text-6xl md:text-7xl mb-3 sm:mb-4 animate-bounce">
         {isInvincible ? '👑 🏆 👑' : isChampion ? '🏆' : isNearMiss ? '💔 🥈' : isFinalist ? '🥈' : '🎖️'}
       </div>
 
       <span
-        className={`text-xs font-mono uppercase tracking-widest font-extrabold block mb-1 ${
+        className={`text-[10px] sm:text-xs font-mono uppercase tracking-widest font-extrabold block mb-1 ${
           isInvincible
             ? 'text-gold-300 animate-pulse'
             : isNearMiss
@@ -58,7 +58,7 @@ export const TrophyHero: React.FC<TrophyHeroProps> = ({
           : 'Tournament Conclusion'}
       </span>
 
-      <h1 className="text-3xl md:text-4xl font-black text-white tracking-wide uppercase font-mono">
+      <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-white tracking-wide uppercase font-mono">
         {isInvincible
           ? 'INVINCIBLE 7-0 CHAMPIONS!'
           : isChampion

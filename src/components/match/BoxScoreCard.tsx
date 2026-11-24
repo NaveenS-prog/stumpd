@@ -15,9 +15,9 @@ export const BoxScoreCard: React.FC<BoxScoreCardProps> = ({
   const [showDetailedScorecard, setShowDetailedScorecard] = useState(false);
 
   return (
-    <div className="bg-turf-900 border border-turf-700 rounded-2xl p-5 shadow-2xl my-4">
+    <div className="bg-turf-900 border border-turf-700 rounded-xl sm:rounded-2xl p-4 sm:p-5 shadow-2xl my-4">
       {/* Victory / Defeat Header */}
-      <div className="text-center pb-4 border-b border-turf-800">
+      <div className="text-center pb-3 sm:pb-4 border-b border-turf-800">
         <span
           className={`inline-block text-xs font-mono font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-2 ${
             result.won
@@ -27,33 +27,33 @@ export const BoxScoreCard: React.FC<BoxScoreCardProps> = ({
         >
           {result.won ? 'VICTORY' : 'DEFEAT'}
         </span>
-        <h2 className="text-2xl font-black text-white">{result.margin}</h2>
+        <h2 className="text-xl sm:text-2xl font-black text-white">{result.margin}</h2>
       </div>
 
       {/* Main Scores Comparison */}
-      <div className="grid grid-cols-2 gap-4 my-6">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 my-4 sm:my-6">
         {/* User Inning */}
-        <div className="bg-turf-950 border border-turf-800 rounded-xl p-4 text-center">
-          <span className="text-xs font-mono text-turf-400 uppercase tracking-wider block mb-1">
+        <div className="bg-turf-950 border border-turf-800 rounded-xl p-3 sm:p-4 text-center">
+          <span className="text-xs font-mono text-turf-400 uppercase tracking-wider block mb-1 truncate">
             {userTeamName}
           </span>
-          <div className="text-3xl font-black text-white">
+          <div className="text-2xl sm:text-3xl font-black text-white">
             {result.userScore.runs}/{result.userScore.wickets}
           </div>
-          <span className="text-[11px] font-mono text-turf-400">
+          <span className="text-[10px] sm:text-[11px] font-mono text-turf-400">
             ({result.userScore.overs} Overs)
           </span>
         </div>
 
         {/* Opponent Inning */}
-        <div className="bg-turf-950 border border-turf-800 rounded-xl p-4 text-center">
-          <span className="text-xs font-mono text-turf-400 uppercase tracking-wider block mb-1">
+        <div className="bg-turf-950 border border-turf-800 rounded-xl p-3 sm:p-4 text-center">
+          <span className="text-xs font-mono text-turf-400 uppercase tracking-wider block mb-1 truncate">
             {opponentName}
           </span>
-          <div className="text-3xl font-black text-gold-400">
+          <div className="text-2xl sm:text-3xl font-black text-gold-400">
             {result.opponentScore.runs}/{result.opponentScore.wickets}
           </div>
-          <span className="text-[11px] font-mono text-turf-400">
+          <span className="text-[10px] sm:text-[11px] font-mono text-turf-400">
             ({result.opponentScore.overs} Overs)
           </span>
         </div>

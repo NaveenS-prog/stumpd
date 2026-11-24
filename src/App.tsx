@@ -83,31 +83,33 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#07110D] text-[#F0FDF4] flex flex-col justify-between selection:bg-gold-400 selection:text-turf-950 font-sans">
       {/* Top Navigation */}
-      <header className="sticky top-0 z-40 bg-[#0A1813]/95 backdrop-blur-md border-b border-[#1F3F32] px-4 py-3">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
+      <header className="sticky top-0 z-40 bg-[#0A1813]/95 backdrop-blur-md border-b border-[#1F3F32] px-3 sm:px-4 py-2 sm:py-3">
+        <div className="max-w-5xl mx-auto flex items-center justify-between gap-2">
           <button
             type="button"
             onClick={resetGame}
-            className="flex items-center gap-2 text-left group"
+            className="flex items-center gap-1.5 sm:gap-2 text-left group min-w-0"
           >
-            <span className="text-2xl">🏏</span>
-            <div>
-              <span className="text-xl font-black tracking-tight text-white font-mono leading-none block">
+            <span className="text-xl sm:text-2xl shrink-0">🏏</span>
+            <div className="min-w-0">
+              <span className="text-lg sm:text-xl font-black tracking-tight text-white font-mono leading-none block">
                 STUMPD<span className="text-gold-400">.</span>
               </span>
-              <span className="text-[10px] text-turf-400 uppercase tracking-widest font-mono">
+              <span className="text-[9px] sm:text-[10px] text-turf-400 uppercase tracking-widest font-mono truncate block">
                 {screen !== 'home' ? getModeTitle() : 'Cricket Strategy'}
               </span>
             </div>
           </button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               type="button"
               onClick={() => setIsScoreboardOpen(true)}
-              className="py-1.5 px-3 rounded-lg bg-[#12261E] hover:bg-[#1A382C] border border-gold-400/40 text-xs font-mono text-gold-300 hover:text-gold-200 transition-all flex items-center gap-1.5"
+              className="py-1.5 px-2.5 sm:px-3 rounded-lg bg-[#12261E] hover:bg-[#1A382C] border border-gold-400/40 text-xs font-mono text-gold-300 hover:text-gold-200 transition-all flex items-center gap-1 shrink-0"
             >
-              <span>🏆 Scoreboard</span>
+              <span>🏆</span>
+              <span className="hidden sm:inline">Scoreboard</span>
+              <span className="sm:hidden text-[11px]">Rank</span>
             </button>
 
             <button
@@ -116,7 +118,7 @@ export default function App() {
                 trackEvent('mute_toggled', { nextMuted: !isMuted });
                 toggleMute();
               }}
-              className="p-2 rounded-lg bg-[#12261E] border border-[#1F3F32] hover:border-gold-400/50 text-xs text-turf-300 hover:text-white transition-all"
+              className="p-1.5 sm:p-2 rounded-lg bg-[#12261E] border border-[#1F3F32] hover:border-gold-400/50 text-xs text-turf-300 hover:text-white transition-all shrink-0"
               title={isMuted ? 'Unmute Sound' : 'Mute Sound'}
               aria-label="Toggle Sound"
             >
@@ -127,9 +129,10 @@ export default function App() {
               <button
                 type="button"
                 onClick={resetGame}
-                className="py-1.5 px-3 rounded-lg bg-[#12261E] hover:bg-[#1A382C] border border-[#1F3F32] text-xs font-mono text-turf-300 hover:text-white transition-all"
+                className="py-1.5 px-2.5 sm:px-3 rounded-lg bg-[#12261E] hover:bg-[#1A382C] border border-[#1F3F32] text-xs font-mono text-turf-300 hover:text-white transition-all shrink-0"
               >
-                Quit to Home
+                <span className="hidden sm:inline">Quit to Home</span>
+                <span className="sm:hidden text-[11px]">Quit</span>
               </button>
             )}
           </div>
@@ -137,7 +140,7 @@ export default function App() {
       </header>
 
       {/* Main Body Container */}
-      <main className="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-6">
+      <main className="flex-1 max-w-5xl w-full mx-auto p-3 sm:p-4 md:p-6">
         {screen === 'home' && (
           <HomeScreen
             onStartGame={startMode}

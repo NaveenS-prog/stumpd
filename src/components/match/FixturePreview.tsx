@@ -25,17 +25,17 @@ export const FixturePreview: React.FC<FixturePreviewProps> = ({
   );
 
   return (
-    <div className="bg-turf-900 border border-turf-700/80 rounded-xl p-5 shadow-xl mb-4">
-      <div className="flex items-center justify-between pb-3 border-b border-turf-800 mb-4">
+    <div className="bg-turf-900 border border-turf-700/80 rounded-xl p-4 sm:p-5 shadow-xl mb-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pb-3 border-b border-turf-800 mb-4">
         <div>
-          <span className="text-[10px] font-mono uppercase text-gold-400 font-bold tracking-widest">
+          <span className="text-[10px] font-mono uppercase text-gold-400 font-bold tracking-widest block mb-0.5">
             Campaign Fixture {matchNumber} of {totalMatches} • {venue.name}
           </span>
-          <h2 className="text-xl md:text-2xl font-black text-white tracking-wide">
+          <h2 className="text-lg sm:text-xl md:text-2xl font-black text-white tracking-wide">
             User XI <span className="text-turf-500 font-normal">vs</span> {opponent.name}
           </h2>
         </div>
-        <span className="text-xs font-mono px-2.5 py-1 rounded bg-turf-800 text-turf-300 border border-turf-700">
+        <span className="text-xs font-mono px-2.5 py-1 rounded bg-turf-800 text-turf-300 border border-turf-700 shrink-0">
           {opponent.era} Squad
         </span>
       </div>

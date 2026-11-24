@@ -78,21 +78,21 @@ export const UniversalScoreboardModal: React.FC<UniversalScoreboardModalProps> =
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/80 backdrop-blur-sm animate-fadeIn"
     >
-      <div className="bg-[#0A1813] border-2 border-gold-400/60 rounded-3xl p-5 sm:p-6 w-full max-w-2xl shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="bg-[#0A1813] border-2 border-gold-400/60 rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 w-full max-w-2xl shadow-2xl relative overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[90vh]">
         {/* Background glow */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-gold-400/5 rounded-full blur-3xl pointer-events-none" />
 
         {/* Modal Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-[#1F3F32] mb-3">
-          <div className="flex items-center gap-2.5">
-            <span className="text-2xl">🏆</span>
-            <div>
-              <h2 id="universal-scoreboard-title" className="text-lg sm:text-xl font-black text-white font-mono uppercase tracking-wide">
+        <div className="flex items-center justify-between pb-3 border-b border-[#1F3F32] mb-3 gap-2">
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+            <span className="text-xl sm:text-2xl shrink-0">🏆</span>
+            <div className="min-w-0">
+              <h2 id="universal-scoreboard-title" className="text-base sm:text-xl font-black text-white font-mono uppercase tracking-wide truncate">
                 Universal Scoreboard
               </h2>
-              <span className="text-xs text-turf-400 font-mono">
+              <span className="text-[10px] sm:text-xs text-turf-400 font-mono block truncate">
                 All-Time Playing XI Power Rankings (0–1000 Scale)
               </span>
             </div>
@@ -101,33 +101,34 @@ export const UniversalScoreboardModal: React.FC<UniversalScoreboardModalProps> =
             type="button"
             onClick={onClose}
             aria-label="Close Scoreboard"
-            className="p-2 rounded-xl bg-turf-900 border border-turf-700 text-turf-300 hover:text-white transition-all text-xs font-mono"
+            className="p-1.5 sm:p-2 rounded-xl bg-turf-900 border border-turf-700 text-turf-300 hover:text-white transition-all text-xs font-mono shrink-0 min-h-[36px]"
           >
             ✕ Close
           </button>
         </div>
 
         {/* Tab Selection */}
-        <div className="flex items-center justify-between gap-2 mb-4 bg-[#07110D] p-1 rounded-xl border border-[#1F3F32]">
+        <div className="flex items-center justify-between gap-1.5 sm:gap-2 mb-3 sm:mb-4 bg-[#07110D] p-1 rounded-xl border border-[#1F3F32]">
           <div className="flex items-center gap-1 w-full">
             <button
               type="button"
               onClick={() => setActiveTab('global')}
-              className={`flex-1 py-2 px-3 rounded-lg text-xs font-mono font-bold transition-all flex items-center justify-center gap-1.5 ${
+              className={`flex-1 py-2 px-2 sm:px-3 rounded-lg text-[10px] sm:text-xs font-mono font-bold transition-all flex items-center justify-center gap-1 min-h-[38px] ${
                 activeTab === 'global'
                   ? 'bg-gold-400 text-turf-950 shadow-md'
                   : 'text-turf-300 hover:text-white hover:bg-turf-card'
               }`}
             >
-              <span>🌍 Universal Leaderboard</span>
+              <span>🌍 Universal</span>
               {hasSupabase && (
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="Live Sync Active" />
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" title="Live Sync Active" />
               )}
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('local')}
-              className={`flex-1 py-2 px-3 rounded-lg text-xs font-mono font-bold transition-all flex items-center justify-center gap-1.5 ${
+              aria-label={`My Best Teams (${localLeaderboard.length})`}
+              className={`flex-1 py-2 px-2 sm:px-3 rounded-lg text-[10px] sm:text-xs font-mono font-bold transition-all flex items-center justify-center gap-1 min-h-[38px] ${
                 activeTab === 'local'
                   ? 'bg-gold-400 text-turf-950 shadow-md'
                   : 'text-turf-300 hover:text-white hover:bg-turf-card'
@@ -142,7 +143,7 @@ export const UniversalScoreboardModal: React.FC<UniversalScoreboardModalProps> =
               type="button"
               onClick={loadGlobalLeaderboard}
               disabled={isLoadingGlobal}
-              className="px-2.5 py-1.5 rounded-lg bg-turf-900 border border-turf-700 hover:border-gold-400/50 text-[11px] font-mono text-turf-300 hover:text-white transition-all shrink-0"
+              className="px-2.5 py-1.5 rounded-lg bg-turf-900 border border-turf-700 hover:border-gold-400/50 text-[11px] font-mono text-turf-300 hover:text-white transition-all shrink-0 min-h-[38px] flex items-center justify-center"
               title="Refresh Global Scores"
             >
               {isLoadingGlobal ? '⏳' : '🔄'}
@@ -380,7 +381,7 @@ export const UniversalScoreboardModal: React.FC<UniversalScoreboardModalProps> =
         </div>
 
         {/* Footer Note */}
-        <div className="pt-3 mt-3 border-t border-[#1F3F32] flex items-center justify-between text-[11px] font-mono text-turf-400">
+        <div className="pt-2.5 sm:pt-3 mt-2 sm:mt-3 border-t border-[#1F3F32] flex flex-col sm:flex-row items-center justify-between text-[10px] sm:text-[11px] font-mono text-turf-400 gap-1 text-center sm:text-left">
           <span>Ranked by Composite Batting, Bowling &amp; Balance</span>
           <span className="text-gold-400 font-bold">Top Score: 1000 Pts</span>
         </div>

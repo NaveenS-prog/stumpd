@@ -174,8 +174,8 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
       )}
 
       {/* Universal Team Score & Rating Card */}
-      <div className="bg-gradient-to-r from-[#12261E] via-[#0A1813] to-[#12261E] border-2 border-gold-400/60 rounded-3xl p-6 mb-8 shadow-2xl relative overflow-hidden">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#1F3F32] mb-4">
+      <div className="bg-gradient-to-r from-[#12261E] via-[#0A1813] to-[#12261E] border-2 border-gold-400/60 rounded-2xl sm:rounded-3xl p-4 sm:p-6 mb-6 sm:mb-8 shadow-2xl relative overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 pb-4 border-b border-[#1F3F32] mb-4">
           <div>
             <span className="text-[10px] font-mono uppercase tracking-widest text-gold-400 font-extrabold block mb-1">
               Universal Team Rating &amp; Balance
@@ -197,7 +197,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
           <button
             type="button"
             onClick={() => setIsScoreboardOpen(true)}
-            className="shrink-0 px-5 py-3 rounded-xl bg-gold-400 hover:bg-gold-300 text-turf-950 font-black text-xs uppercase tracking-wider transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2"
+            className="w-full sm:w-auto shrink-0 px-4 sm:px-5 py-3 rounded-xl bg-gold-400 hover:bg-gold-300 text-turf-950 font-black text-xs uppercase tracking-wider transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 min-h-[44px]"
           >
             <span>🏆 Universal Scoreboard</span>
           </button>
@@ -238,9 +238,9 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
       </div>
 
       {/* Name Your Drafted XI & Save to Scoreboard */}
-      <div className="bg-gradient-to-r from-[#12261E] via-[#0A1813] to-[#12261E] border-2 border-gold-400/50 rounded-3xl p-5 sm:p-6 mb-8 shadow-xl">
+      <div className="bg-gradient-to-r from-[#12261E] via-[#0A1813] to-[#12261E] border-2 border-gold-400/50 rounded-2xl sm:rounded-3xl p-4 sm:p-6 mb-6 sm:mb-8 shadow-xl">
         <div className="flex items-center gap-2.5 mb-3">
-          <span className="text-xl">✍️</span>
+          <span className="text-xl shrink-0">✍️</span>
           <div>
             <h3 className="text-white font-mono font-bold text-sm uppercase tracking-wide">
               {isSaved ? 'Squad Immortalized on the Scoreboard' : 'Name Your XI & Save to Scoreboard'}
@@ -275,7 +275,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
               <button
                 type="button"
                 onClick={() => setIsScoreboardOpen(true)}
-                className="px-4 py-2.5 rounded-xl bg-gold-400 hover:bg-gold-300 text-black font-black text-xs uppercase tracking-wider font-mono transition-all shadow-md flex items-center gap-1.5"
+                className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-gold-400 hover:bg-gold-300 text-black font-black text-xs uppercase tracking-wider font-mono transition-all shadow-md flex items-center justify-center gap-1.5 min-h-[44px]"
               >
                 <span>🏆 View Scoreboard</span>
               </button>
@@ -319,7 +319,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
               </span>
               <button
                 type="submit"
-                className="px-6 py-2.5 rounded-xl bg-gold-400 hover:bg-gold-300 text-turf-950 font-black text-xs uppercase tracking-wider font-mono transition-all shadow-lg active:scale-95 flex items-center justify-center gap-1.5"
+                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gold-400 hover:bg-gold-300 text-turf-950 font-black text-xs uppercase tracking-wider font-mono transition-all shadow-lg active:scale-95 flex items-center justify-center gap-1.5 min-h-[44px]"
               >
                 <span>💾 Save XI to Scoreboard</span>
               </button>
@@ -335,7 +335,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
       />
 
       {/* Share Actions Bar */}
-      <div className="bg-turf-900 border border-turf-700 rounded-2xl p-4 mb-8 shadow-xl flex flex-wrap items-center justify-between gap-3">
+      <div className="bg-turf-900 border border-turf-700 rounded-xl sm:rounded-2xl p-4 mb-6 sm:mb-8 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <span className="text-xs font-mono uppercase text-gold-400 font-bold tracking-wider block">
             Share Your Achievement
@@ -345,11 +345,11 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
           <button
             type="button"
             onClick={handleShareGrid}
-            className="py-2.5 px-4 rounded-xl bg-gold-400 hover:bg-gold-300 text-turf-950 font-black text-xs uppercase tracking-wider transition-all flex items-center gap-2 shadow-md"
+            className="w-full sm:w-auto py-2.5 px-4 rounded-xl bg-gold-400 hover:bg-gold-300 text-turf-950 font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-md min-h-[44px]"
           >
             <span>
               {shareStatus === 'shared'
@@ -363,7 +363,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
           <button
             type="button"
             onClick={handleDownloadCard}
-            className="py-2.5 px-4 rounded-xl bg-turf-800 hover:bg-turf-700 text-white font-bold text-xs uppercase tracking-wider border border-turf-600 transition-all"
+            className="w-full sm:w-auto py-2.5 px-4 rounded-xl bg-turf-800 hover:bg-turf-700 text-white font-bold text-xs uppercase tracking-wider border border-turf-600 transition-all flex items-center justify-center min-h-[44px]"
           >
             🖼️ Download Card
           </button>
@@ -371,7 +371,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
       </div>
 
       {/* Fixture Outcomes Grid */}
-      <div className="bg-turf-900 border border-turf-700 rounded-2xl p-6 mb-8 shadow-xl">
+      <div className="bg-turf-900 border border-turf-700 rounded-xl sm:rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 shadow-xl">
         <h3 className="text-sm font-mono font-bold uppercase tracking-wider text-white mb-4">
           Campaign Scorecards ({winsCount}/{totalMatches} Won)
         </h3>
@@ -382,11 +382,11 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
             return (
               <div
                 key={opp ? opp.id : idx}
-                className="flex items-center justify-between p-3 rounded-xl bg-turf-950 border border-turf-800"
+                className="flex items-center justify-between p-3 rounded-xl bg-turf-950 border border-turf-800 gap-2"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                   <span
-                    className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs ${
+                    className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${
                       result.won
                         ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
                         : 'bg-red-500/20 text-red-400 border border-red-500/40'
@@ -394,19 +394,19 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
                   >
                     {result.won ? 'W' : 'L'}
                   </span>
-                  <div>
-                    <span className="text-sm font-bold text-white block">
+                  <div className="min-w-0">
+                    <span className="text-xs sm:text-sm font-bold text-white block truncate">
                       vs {opp ? opp.name : `Opponent ${idx + 1}`}
                     </span>
-                    <span className="text-xs text-turf-400">{result.margin}</span>
+                    <span className="text-[11px] sm:text-xs text-turf-400 block truncate">{result.margin}</span>
                   </div>
                 </div>
 
-                <div className="text-right font-mono text-xs">
+                <div className="text-right font-mono text-[11px] sm:text-xs shrink-0">
                   <span className="text-white font-semibold">
                     {result.userScore.runs}/{result.userScore.wickets}
                   </span>
-                  <span className="text-turf-500 mx-1.5">vs</span>
+                  <span className="text-turf-500 mx-1 sm:mx-1.5">vs</span>
                   <span className="text-gold-400 font-semibold">
                     {result.opponentScore.runs}/{result.opponentScore.wickets}
                   </span>
@@ -418,7 +418,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
       </div>
 
       {/* Playing XI Summary */}
-      <div className="bg-turf-900 border border-turf-700 rounded-2xl p-6 mb-8 shadow-xl">
+      <div className="bg-turf-900 border border-turf-700 rounded-xl sm:rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 shadow-xl">
         <h3 className="text-sm font-mono font-bold uppercase tracking-wider text-white mb-4">
           Drafted Playing XI
         </h3>
@@ -426,15 +426,15 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
           {userXI.map((player, idx) => (
             <div
               key={player.id}
-              className="flex items-center justify-between p-2.5 rounded-lg bg-turf-950 border border-turf-800 text-xs font-mono"
+              className="flex items-center justify-between p-2.5 rounded-lg bg-turf-950 border border-turf-800 text-xs font-mono gap-2"
             >
-              <div className="flex items-center gap-2">
-                <span className="text-gold-400 font-bold">{idx + 1}.</span>
-                <span className="text-white font-medium">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-gold-400 font-bold shrink-0">{idx + 1}.</span>
+                <span className="text-white font-medium truncate">
                   {player.name} {player.id === captainId ? '(C)' : ''}
                 </span>
               </div>
-              <span className="text-turf-400">
+              <span className="text-turf-400 shrink-0 text-[11px] sm:text-xs">
                 BAT {player.battingRating} • BOWL {player.bowlingRating}
               </span>
             </div>
@@ -450,7 +450,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
             trackEvent('replay_clicked', { source: 'bottom_button' });
             onPlayAgain();
           }}
-          className="w-full sm:w-auto px-10 py-4 rounded-xl bg-gold-400 hover:bg-gold-300 text-turf-950 font-black text-sm uppercase tracking-wider transition-all duration-150 active:scale-98 shadow-2xl hover:shadow-gold-400/30"
+          className="w-full sm:w-auto px-8 sm:px-10 py-3.5 sm:py-4 rounded-xl bg-gold-400 hover:bg-gold-300 text-turf-950 font-black text-sm uppercase tracking-wider transition-all duration-150 active:scale-98 shadow-2xl hover:shadow-gold-400/30 min-h-[48px]"
         >
           Draft New XI & Play Again 🏏
         </button>

@@ -76,28 +76,28 @@ export const MatchSetupScreen: React.FC<MatchSetupScreenProps> = ({
   const tacticalTip = getTacticalTip(selectedVenue, selectedOpponent);
 
   return (
-    <div className="min-h-screen bg-[#07110D] text-white p-4 md:p-8 flex flex-col items-center">
-      <div className="w-full max-w-6xl space-y-8">
+    <div className="min-h-screen bg-[#07110D] text-white p-3 sm:p-4 md:p-8 flex flex-col items-center">
+      <div className="w-full max-w-6xl space-y-6 sm:space-y-8">
         {/* Top Header Bar */}
-        <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-emerald-900/60 pb-6">
+        <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 border-b border-emerald-900/60 pb-4 sm:pb-6">
           <div>
-            <div className="flex items-center gap-3">
-              <span className="text-2xl font-black tracking-wider text-amber-400">STUMPD</span>
-              <span className="text-xs uppercase tracking-widest font-semibold px-2.5 py-1 rounded bg-emerald-900/60 text-emerald-300 border border-emerald-700/50">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <span className="text-xl sm:text-2xl font-black tracking-wider text-amber-400">STUMPD</span>
+              <span className="text-xs uppercase tracking-widest font-semibold px-2 sm:px-2.5 py-0.5 sm:py-1 rounded bg-emerald-900/60 text-emerald-300 border border-emerald-700/50">
                 {gameMode} Mode
               </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold mt-1 text-white">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold mt-1 text-white">
               Match Setup & Tactical Intel
             </h1>
-            <p className="text-sm text-emerald-400/80">
+            <p className="text-xs sm:text-sm text-emerald-400/80">
               Select your targeted opposition, home venue, and pitch conditions before entering the draft room.
             </p>
           </div>
 
           <button
             onClick={onBackToHome}
-            className="px-4 py-2 text-sm rounded-lg border border-emerald-800/80 text-emerald-300 hover:bg-emerald-950/70 hover:border-emerald-600 transition"
+            className="w-full sm:w-auto px-4 py-2.5 text-xs sm:text-sm rounded-lg border border-emerald-800/80 text-emerald-300 hover:bg-emerald-950/70 hover:border-emerald-600 transition min-h-[44px] flex items-center justify-center"
           >
             ← Back to Home
           </button>
@@ -285,7 +285,7 @@ export const MatchSetupScreen: React.FC<MatchSetupScreenProps> = ({
             <div className="w-full md:w-auto flex flex-col sm:flex-row md:flex-col items-center gap-3">
               <button
                 onClick={onProceedToDraft}
-                className="w-full md:w-64 py-4 px-6 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-black font-black text-base uppercase tracking-wider shadow-lg shadow-amber-950/60 hover:brightness-110 active:scale-95 transition-all text-center flex items-center justify-center gap-2"
+                className="w-full md:w-64 py-3.5 sm:py-4 px-6 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-black font-black text-sm sm:text-base uppercase tracking-wider shadow-lg shadow-amber-950/60 hover:brightness-110 active:scale-95 transition-all text-center flex items-center justify-center gap-2 min-h-[48px]"
               >
                 <span>Lock Fixture & Begin Draft</span>
                 <span>→</span>

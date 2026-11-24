@@ -41,6 +41,16 @@ class SoundEngine {
   }
 
   public isMuted(): boolean {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY_MUTED);
+        if (saved !== null) {
+          return saved === 'true';
+        }
+      } catch {
+        // LocalStorage may fail in private mode
+      }
+    }
     return this.muted;
   }
 

@@ -279,13 +279,6 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
               >
                 <span>🏆 View Scoreboard</span>
               </button>
-              <button
-                type="button"
-                onClick={() => setIsSaved(false)}
-                className="px-3 py-2.5 rounded-xl bg-turf-900 hover:bg-turf-800 text-turf-300 hover:text-white border border-turf-700 text-xs font-mono transition-all"
-              >
-                Edit Name
-              </button>
             </div>
           </div>
         ) : (
@@ -298,6 +291,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
                 <input
                   type="text"
                   required
+                  maxLength={60}
                   value={teamName}
                   onChange={(e) => setTeamName(e.target.value)}
                   placeholder="e.g. Mumbai Mavericks, Lahore Qalandars"
@@ -310,6 +304,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
                 </label>
                 <input
                   type="text"
+                  maxLength={40}
                   value={creatorName}
                   onChange={(e) => setCreatorName(e.target.value)}
                   placeholder="e.g. Coach Naveen, Captain Cool"

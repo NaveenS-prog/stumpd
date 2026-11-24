@@ -3,45 +3,16 @@
  */
 import { soundEngine } from '../engine/audio';
 
-const STORAGE_KEY_MUTED = 'stumpd_muted';
-let memoryMuted = false;
-
-function safeGetMuted(): boolean {
-  if (typeof window === 'undefined') return memoryMuted;
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY_MUTED);
-    if (raw !== null) {
-      return raw === 'true';
-    }
-    return memoryMuted;
-  } catch {
-    return memoryMuted;
-  }
-}
-
-function safeSetMuted(muted: boolean): void {
-  memoryMuted = muted;
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(STORAGE_KEY_MUTED, String(muted));
-  } catch {
-    // Ignore private browsing errors
-  }
-}
-
 export function getAudioMuted(): boolean {
-  return safeGetMuted();
+  return soundEngine.isMuted();
 }
 
 export function setAudioMuted(muted: boolean): void {
-  safeSetMuted(muted);
   soundEngine.setMuted(muted);
 }
 
 export function toggleAudioMuted(): boolean {
-  const next = !getAudioMuted();
-  setAudioMuted(next);
-  return next;
+  return soundEngine.toggleMute();
 }
 
 let isUnlocked = false;

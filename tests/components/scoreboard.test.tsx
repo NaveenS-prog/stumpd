@@ -43,8 +43,8 @@ describe('Universal Scoreboard & Team Naming Flow', () => {
   it('renders clean empty state in UniversalScoreboardModal when no teams exist', () => {
     render(<UniversalScoreboardModal isOpen={true} onClose={vi.fn()} />);
 
-    // Default tab is global Supabase, which prompts configuration when not connected
-    expect(screen.getByText(/Supabase Universal Database Ready/i)).toBeInTheDocument();
+    // Default tab is global leaderboard, which prompts configuration when not connected
+    expect(screen.getByText(/Universal Leaderboard Network/i)).toBeInTheDocument();
 
     // Click on local tab "My Best Teams"
     const localTabButton = screen.getByRole('button', { name: /My Best Teams/i });

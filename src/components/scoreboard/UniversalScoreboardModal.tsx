@@ -97,13 +97,13 @@ export const UniversalScoreboardModal: React.FC<UniversalScoreboardModalProps> =
               onClick={() => setActiveTab('global')}
               className={`flex-1 py-2 px-3 rounded-lg text-xs font-mono font-bold transition-all flex items-center justify-center gap-1.5 ${
                 activeTab === 'global'
-                  ? 'bg-gold-400 text-black shadow-md'
-                  : 'text-turf-300 hover:text-white hover:bg-[#12261E]'
+                  ? 'bg-gold-400 text-turf-950 shadow-md'
+                  : 'text-turf-300 hover:text-white hover:bg-turf-card'
               }`}
             >
-              <span>🌍 Universal (Supabase)</span>
+              <span>🌍 Universal Leaderboard</span>
               {hasSupabase && (
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="Supabase Connected" />
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="Live Sync Active" />
               )}
             </button>
             <button
@@ -111,8 +111,8 @@ export const UniversalScoreboardModal: React.FC<UniversalScoreboardModalProps> =
               onClick={() => setActiveTab('local')}
               className={`flex-1 py-2 px-3 rounded-lg text-xs font-mono font-bold transition-all flex items-center justify-center gap-1.5 ${
                 activeTab === 'local'
-                  ? 'bg-gold-400 text-black shadow-md'
-                  : 'text-turf-300 hover:text-white hover:bg-[#12261E]'
+                  ? 'bg-gold-400 text-turf-950 shadow-md'
+                  : 'text-turf-300 hover:text-white hover:bg-turf-card'
               }`}
             >
               <span>💾 My Best Teams ({localLeaderboard.length})</span>
@@ -139,17 +139,16 @@ export const UniversalScoreboardModal: React.FC<UniversalScoreboardModalProps> =
               <div className="py-10 px-5 text-center flex flex-col items-center justify-center bg-turf-950/70 rounded-2xl border border-dashed border-gold-400/30 my-2">
                 <span className="text-4xl mb-3">⚡</span>
                 <h3 className="text-white font-mono font-bold text-sm sm:text-base mb-1">
-                  Supabase Universal Database Ready
+                  Universal Leaderboard Network
                 </h3>
                 <p className="text-turf-300 text-xs font-mono max-w-md leading-relaxed mb-4">
-                  Connect your Supabase project URL and anon public key to enable live worldwide global rankings.
-                  The SQL schema is ready in <code className="text-gold-400">supabase/schema.sql</code>.
+                  Live cloud rankings are currently connecting.
                 </p>
                 <div className="flex flex-col sm:flex-row items-center gap-2">
                   <button
                     type="button"
                     onClick={() => setActiveTab('local')}
-                    className="px-4 py-2 rounded-xl bg-gold-400 text-black font-mono font-bold text-xs hover:bg-gold-300 transition-all shadow-md"
+                    className="px-4 py-2 rounded-xl bg-gold-400 text-turf-950 font-mono font-bold text-xs hover:bg-gold-300 transition-all shadow-md"
                   >
                     View My Local Best Teams ({localLeaderboard.length})
                   </button>
@@ -159,7 +158,7 @@ export const UniversalScoreboardModal: React.FC<UniversalScoreboardModalProps> =
               <div className="py-16 text-center flex flex-col items-center justify-center">
                 <div className="w-8 h-8 border-2 border-gold-400 border-t-transparent rounded-full animate-spin mb-3" />
                 <span className="text-xs font-mono text-turf-300">
-                  Fetching live scores from Supabase...
+                  Fetching live scores...
                 </span>
               </div>
             ) : globalError ? (
@@ -186,7 +185,7 @@ export const UniversalScoreboardModal: React.FC<UniversalScoreboardModalProps> =
                   Universal Scoreboard Awaiting Its First Champion
                 </h3>
                 <p className="text-turf-400 text-xs font-mono max-w-md leading-relaxed">
-                  No teams submitted yet to the global Supabase database. Complete a tournament, name your XI, and submit your score to claim Rank #1!
+                  No teams submitted yet to the global leaderboard. Complete a tournament, name your XI, and submit your score to claim Rank #1!
                 </p>
               </div>
             ) : (
@@ -210,12 +209,12 @@ export const UniversalScoreboardModal: React.FC<UniversalScoreboardModalProps> =
                       <span
                         className={`w-7 h-7 rounded-full flex items-center justify-center font-mono font-black text-xs shrink-0 ${
                           idx === 0
-                            ? 'bg-gold-400 text-black shadow-md'
+                            ? 'bg-gold-400 text-turf-950 shadow-md ring-2 ring-gold-400/50'
                             : idx === 1
-                            ? 'bg-slate-300 text-black'
+                            ? 'bg-slate-200 text-turf-950 font-black ring-1 ring-slate-300'
                             : idx === 2
-                            ? 'bg-amber-700 text-white'
-                            : 'bg-turf-800 text-turf-300'
+                            ? 'bg-amber-600 text-white font-black ring-1 ring-amber-500'
+                            : 'bg-turf-800 text-turf-200 border border-turf-700'
                         }`}
                       >
                         {idx + 1}
@@ -227,12 +226,12 @@ export const UniversalScoreboardModal: React.FC<UniversalScoreboardModalProps> =
                             {entry.teamName}
                           </span>
                           {entry.creatorName && (
-                            <span className="text-[10px] font-mono text-gold-400/90 bg-gold-400/10 px-1.5 py-0.5 rounded border border-gold-400/20">
+                            <span className="text-[10px] font-mono font-semibold text-gold-300 bg-gold-400/15 px-1.5 py-0.5 rounded border border-gold-400/30">
                               By {entry.creatorName}
                             </span>
                           )}
                           {entry.isInvincible && (
-                            <span className="text-[9px] font-black font-mono uppercase px-1.5 py-0.5 rounded bg-gold-400 text-black">
+                            <span className="text-[9px] font-black font-mono uppercase px-1.5 py-0.5 rounded bg-gold-400 text-turf-950">
                               👑 7-0 Invincible
                             </span>
                           )}
@@ -301,12 +300,12 @@ export const UniversalScoreboardModal: React.FC<UniversalScoreboardModalProps> =
                       <span
                         className={`w-7 h-7 rounded-full flex items-center justify-center font-mono font-black text-xs shrink-0 ${
                           idx === 0
-                            ? 'bg-gold-400 text-black shadow-md'
+                            ? 'bg-gold-400 text-turf-950 shadow-md ring-2 ring-gold-400/50'
                             : idx === 1
-                            ? 'bg-slate-300 text-black'
+                            ? 'bg-slate-200 text-turf-950 font-black ring-1 ring-slate-300'
                             : idx === 2
-                            ? 'bg-amber-700 text-white'
-                            : 'bg-turf-800 text-turf-300'
+                            ? 'bg-amber-600 text-white font-black ring-1 ring-amber-500'
+                            : 'bg-turf-800 text-turf-200 border border-turf-700'
                         }`}
                       >
                         {idx + 1}
@@ -318,12 +317,12 @@ export const UniversalScoreboardModal: React.FC<UniversalScoreboardModalProps> =
                             {entry.teamName}
                           </span>
                           {entry.creatorName && (
-                            <span className="text-[10px] font-mono text-gold-400/90 bg-gold-400/10 px-1.5 py-0.5 rounded border border-gold-400/20">
+                            <span className="text-[10px] font-mono font-semibold text-gold-300 bg-gold-400/15 px-1.5 py-0.5 rounded border border-gold-400/30">
                               By {entry.creatorName}
                             </span>
                           )}
                           {entry.isInvincible && (
-                            <span className="text-[9px] font-black font-mono uppercase px-1.5 py-0.5 rounded bg-gold-400 text-black">
+                            <span className="text-[9px] font-black font-mono uppercase px-1.5 py-0.5 rounded bg-gold-400 text-turf-950">
                               👑 7-0 Invincible
                             </span>
                           )}

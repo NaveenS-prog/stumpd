@@ -248,7 +248,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
             <p className="text-xs text-turf-300 font-mono">
               {isSaved
                 ? isGlobalSynced
-                  ? 'Saved to local browser database and published live to Universal Supabase Leaderboard!'
+                  ? 'Saved to local browser database and published live to Universal Leaderboard!'
                   : 'Saved to local browser database! Visible across refreshes.'
                 : 'Give your drafted lineup a custom team name to rank it on the Universal Scoreboard.'}
             </p>

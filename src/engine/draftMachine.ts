@@ -1,5 +1,5 @@
 import playersData from '../data/players.json';
-import { Player, Era, IPLEra } from '../types/player';
+import { Player, PlayerRole, Era, IPLEra } from '../types/player';
 import { SlotDefinition, GameMode } from '../types/game';
 import {
   NATIONAL_TEAMS,
@@ -13,12 +13,16 @@ export const ERAS: Era[] = INTERNATIONAL_ERAS;
 
 const ALL_PLAYERS: Player[] = playersData as Player[];
 
+const SECONDARY_ALLOWED_SINGLE_ROLES: PlayerRole[] = ['Opener', 'Wicketkeeper', 'Pacer'];
+
 function matchesSlotRole(player: Player, slot: SlotDefinition, strictPrimary: boolean = false): boolean {
+  const allowSecondary =
+    !strictPrimary &&
+    (slot.eligibleRoles.length > 1 || SECONDARY_ALLOWED_SINGLE_ROLES.includes(slot.eligibleRoles[0]));
+
   const roleMatches =
-    strictPrimary || slot.eligibleRoles.length === 1
-      ? slot.eligibleRoles.includes(player.primaryRole)
-      : slot.eligibleRoles.includes(player.primaryRole) ||
-        Boolean(player.secondaryRoles?.some((r) => slot.eligibleRoles.includes(r)));
+    slot.eligibleRoles.includes(player.primaryRole) ||
+    (allowSecondary && Boolean(player.secondaryRoles?.some((r) => slot.eligibleRoles.includes(r))));
 
   if (!roleMatches) return false;
 
@@ -35,6 +39,15 @@ function matchesSlotRole(player: Player, slot: SlotDefinition, strictPrimary: bo
   }
 
   return true;
+}
+
+function sortCandidatesForSlot(candidates: Player[], slot: SlotDefinition): Player[] {
+  return [...candidates].sort((a, b) => {
+    const aStrict = matchesSlotRole(a, slot, true) ? 1 : 0;
+    const bStrict = matchesSlotRole(b, slot, true) ? 1 : 0;
+    if (aStrict !== bStrict) return bStrict - aStrict;
+    return (b.battingRating + b.bowlingRating) - (a.battingRating + a.bowlingRating);
+  });
 }
 
 function isIPLTeam(teamId: string): boolean {
@@ -101,12 +114,7 @@ class DraftMachine {
         p.iplCareers!.some((c) => c.franchise === franchise && c.eras.includes(era))
     );
     if (directMatches.length > 0) {
-      return directMatches.sort((a, b) => {
-        const aStrict = matchesSlotRole(a, slot, true) ? 1 : 0;
-        const bStrict = matchesSlotRole(b, slot, true) ? 1 : 0;
-        if (aStrict !== bStrict) return bStrict - aStrict;
-        return (b.battingRating + b.bowlingRating) - (a.battingRating + a.bowlingRating);
-      });
+      return sortCandidatesForSlot(directMatches, slot);
     }
 
     // 2. Smart Fallback strictly within IPL players
@@ -121,7 +129,7 @@ class DraftMachine {
           matchesSlotRole(p, slot, false) &&
           p.iplCareers!.some((c) => c.franchise === franchise && c.eras.includes(adjEra))
       );
-      if (adjMatches.length > 0) return adjMatches;
+      if (adjMatches.length > 0) return sortCandidatesForSlot(adjMatches, slot);
     }
 
     // Strategy B: Any era for same franchise
@@ -130,7 +138,7 @@ class DraftMachine {
         matchesSlotRole(p, slot, false) &&
         p.iplCareers!.some((c) => c.franchise === franchise)
     );
-    if (franchiseMatches.length > 0) return franchiseMatches;
+    if (franchiseMatches.length > 0) return sortCandidatesForSlot(franchiseMatches, slot);
 
     // Strategy C: Same IPL era across any IPL franchise
     const eraMatches = iplPool.filter(
@@ -138,11 +146,11 @@ class DraftMachine {
         matchesSlotRole(p, slot, false) &&
         p.iplCareers!.some((c) => c.eras.includes(era))
     );
-    if (eraMatches.length > 0) return eraMatches;
+    if (eraMatches.length > 0) return sortCandidatesForSlot(eraMatches, slot);
 
     // Strategy D: Any IPL player matching slot role (guarantees IPL isolation)
     const anyIPLMatches = iplPool.filter((p) => matchesSlotRole(p, slot, false));
-    return anyIPLMatches;
+    return sortCandidatesForSlot(anyIPLMatches, slot);
   }
 
   private getCandidatesForInternational(
@@ -164,12 +172,7 @@ class DraftMachine {
       (p) => matchesSlotRole(p, slot, false) && matchesCountry(p) && matchesIntlEra(p, era)
     );
     if (directMatches.length > 0) {
-      return directMatches.sort((a, b) => {
-        const aStrict = matchesSlotRole(a, slot, true) ? 1 : 0;
-        const bStrict = matchesSlotRole(b, slot, true) ? 1 : 0;
-        if (aStrict !== bStrict) return bStrict - aStrict;
-        return (b.battingRating + b.bowlingRating) - (a.battingRating + a.bowlingRating);
-      });
+      return sortCandidatesForSlot(directMatches, slot);
     }
 
     // 2. Smart Fallback strictly within international players
@@ -182,24 +185,24 @@ class DraftMachine {
       const adjMatches = intlPool.filter(
         (p) => matchesSlotRole(p, slot, false) && matchesCountry(p) && matchesIntlEra(p, adjEra)
       );
-      if (adjMatches.length > 0) return adjMatches;
+      if (adjMatches.length > 0) return sortCandidatesForSlot(adjMatches, slot);
     }
 
     // Strategy B: Any decade for same country
     const countryMatches = intlPool.filter(
       (p) => matchesSlotRole(p, slot, false) && matchesCountry(p)
     );
-    if (countryMatches.length > 0) return countryMatches;
+    if (countryMatches.length > 0) return sortCandidatesForSlot(countryMatches, slot);
 
     // Strategy C: Same decade across any country
     const eraMatches = intlPool.filter(
       (p) => matchesSlotRole(p, slot, false) && matchesIntlEra(p, era)
     );
-    if (eraMatches.length > 0) return eraMatches;
+    if (eraMatches.length > 0) return sortCandidatesForSlot(eraMatches, slot);
 
     // Strategy D: Any international player matching slot role
     const anyIntlMatches = intlPool.filter((p) => matchesSlotRole(p, slot, false));
-    return anyIntlMatches;
+    return sortCandidatesForSlot(anyIntlMatches, slot);
   }
 
   public spinSlotReels(
@@ -232,8 +235,13 @@ class DraftMachine {
     const randomTeamIndex = Math.floor(rng() * NATIONAL_TEAMS.length);
     const selectedTeam = NATIONAL_TEAMS[randomTeamIndex].id;
 
-    const randomEraIndex = Math.floor(rng() * INTERNATIONAL_ERAS.length);
-    const selectedEra = INTERNATIONAL_ERAS[randomEraIndex];
+    const validEras: Era[] =
+      selectedTeam === 'Bangladesh' || selectedTeam === 'Afghanistan'
+        ? ['2000s', '2010s', 'Modern']
+        : INTERNATIONAL_ERAS;
+
+    const randomEraIndex = Math.floor(rng() * validEras.length);
+    const selectedEra = validEras[randomEraIndex];
 
     return {
       team: selectedTeam,

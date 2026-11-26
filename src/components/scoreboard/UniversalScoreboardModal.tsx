@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { getUniversalLeaderboard } from '../../utils/storage';
 import {
   fetchGlobalLeaderboard,
@@ -9,20 +9,23 @@ import {
 interface UniversalScoreboardModalProps {
   isOpen: boolean;
   onClose: () => void;
-  currentUserScore?: number;
+  highlightEntryId?: string | null;
 }
 
 export const UniversalScoreboardModal: React.FC<UniversalScoreboardModalProps> = ({
   isOpen,
   onClose,
-  currentUserScore,
+  highlightEntryId,
 }) => {
   const [activeTab, setActiveTab] = useState<'global' | 'local'>('global');
   const [globalEntries, setGlobalEntries] = useState<GlobalLeaderboardEntry[]>([]);
   const [isLoadingGlobal, setIsLoadingGlobal] = useState<boolean>(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
 
-  const localLeaderboard = getUniversalLeaderboard();
+  const localLeaderboard = useMemo(
+    () => (isOpen ? getUniversalLeaderboard() : []),
+    [isOpen, activeTab]
+  );
   const hasSupabase = isSupabaseConfigured();
 
   const loadGlobalLeaderboard = useCallback(async () => {
@@ -209,8 +212,9 @@ export const UniversalScoreboardModal: React.FC<UniversalScoreboardModalProps> =
               </div>
             ) : (
               globalEntries.map((entry, idx) => {
-                const isHighlight =
-                  currentUserScore !== undefined && entry.totalScore === currentUserScore;
+                const isHighlight = Boolean(
+                  highlightEntryId && entry.id === highlightEntryId
+                );
 
                 return (
                   <div
@@ -300,8 +304,9 @@ export const UniversalScoreboardModal: React.FC<UniversalScoreboardModalProps> =
               </div>
             ) : (
               localLeaderboard.map((entry, idx) => {
-                const isHighlight =
-                  currentUserScore !== undefined && entry.totalScore === currentUserScore;
+                const isHighlight = Boolean(
+                  highlightEntryId && entry.id === highlightEntryId
+                );
 
                 return (
                   <div

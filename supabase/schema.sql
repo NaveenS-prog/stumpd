@@ -10,11 +10,11 @@ CREATE TABLE IF NOT EXISTS public.universal_leaderboard (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     team_name TEXT NOT NULL CHECK (char_length(team_name) >= 1 AND char_length(team_name) <= 60),
     creator_name TEXT CHECK (creator_name IS NULL OR (char_length(creator_name) >= 1 AND char_length(creator_name) <= 40)),
-    mode TEXT NOT NULL DEFAULT 'Standard' CHECK (char_length(mode) >= 1 AND char_length(mode) <= 30),
+    mode TEXT NOT NULL DEFAULT 'International' CONSTRAINT chk_mode_valid CHECK (mode IN ('International', 'IPL', 'Daily Stumpd')),
     total_score INTEGER NOT NULL CHECK (total_score >= 0 AND total_score <= 1000),
     grade TEXT NOT NULL CHECK (grade IN ('S+', 'S', 'A', 'B', 'C', 'D')),
-    matches_won INTEGER NOT NULL DEFAULT 0 CHECK (matches_won >= 0 AND matches_won <= 20),
-    total_matches INTEGER NOT NULL DEFAULT 7 CHECK (total_matches >= 1 AND total_matches <= 20),
+    matches_won INTEGER NOT NULL DEFAULT 1 CONSTRAINT chk_matches_won_bounds CHECK (matches_won BETWEEN 1 AND 7),
+    total_matches INTEGER NOT NULL DEFAULT 7 CONSTRAINT chk_total_matches_bounds CHECK (total_matches BETWEEN 1 AND 7),
     captain_name TEXT NOT NULL CHECK (char_length(captain_name) >= 1 AND char_length(captain_name) <= 60),
     synergies_count INTEGER NOT NULL DEFAULT 0 CHECK (synergies_count >= 0 AND synergies_count <= 20),
     is_invincible BOOLEAN NOT NULL DEFAULT FALSE,
@@ -35,18 +35,53 @@ CREATE TABLE IF NOT EXISTS public.universal_leaderboard (
     ),
     CONSTRAINT chk_match_bounds CHECK (
         matches_won <= total_matches
+    ),
+    CONSTRAINT chk_gauntlet_consistency CHECK (
+        (matches_won = 7 AND total_matches = 7) OR
+        (matches_won = total_matches - 1 AND total_matches >= 2 AND total_matches <= 7)
     )
 );
 
--- 2. Create high-performance index for leaderboard querying
-CREATE INDEX IF NOT EXISTS idx_universal_leaderboard_score_date 
-ON public.universal_leaderboard (total_score DESC, created_at ASC);
+-- 2. Destructive pre-constraint cleanup for existing databases (purges legacy Practice/'Standard'/0-win/invalid rows)
+DELETE FROM public.universal_leaderboard
+WHERE mode NOT IN ('International', 'IPL', 'Daily Stumpd')
+   OR matches_won < 1
+   OR total_matches > 7
+   OR NOT (
+       (matches_won = 7 AND total_matches = 7) OR
+       (matches_won = total_matches - 1 AND total_matches >= 2 AND total_matches <= 7)
+   );
 
--- 3. Enable Row Level Security (RLS)
+-- 3. Tighten CHECK constraints on existing tables idempotently
+ALTER TABLE public.universal_leaderboard
+    ALTER COLUMN mode SET DEFAULT 'International',
+    ALTER COLUMN matches_won SET DEFAULT 1,
+    DROP CONSTRAINT IF EXISTS universal_leaderboard_mode_check,
+    DROP CONSTRAINT IF EXISTS universal_leaderboard_matches_won_check,
+    DROP CONSTRAINT IF EXISTS universal_leaderboard_total_matches_check,
+    DROP CONSTRAINT IF EXISTS chk_mode_valid,
+    DROP CONSTRAINT IF EXISTS chk_matches_won_bounds,
+    DROP CONSTRAINT IF EXISTS chk_total_matches_bounds,
+    DROP CONSTRAINT IF EXISTS chk_gauntlet_consistency;
+
+ALTER TABLE public.universal_leaderboard
+    ADD CONSTRAINT chk_mode_valid CHECK (mode IN ('International', 'IPL', 'Daily Stumpd')),
+    ADD CONSTRAINT chk_matches_won_bounds CHECK (matches_won BETWEEN 1 AND 7),
+    ADD CONSTRAINT chk_total_matches_bounds CHECK (total_matches BETWEEN 1 AND 7),
+    ADD CONSTRAINT chk_gauntlet_consistency CHECK (
+        (matches_won = 7 AND total_matches = 7) OR
+        (matches_won = total_matches - 1 AND total_matches >= 2 AND total_matches <= 7)
+    );
+
+-- 4. Recreate high-performance index for win-first leaderboard querying
+DROP INDEX IF EXISTS public.idx_universal_leaderboard_score_date;
+CREATE INDEX idx_universal_leaderboard_score_date
+ON public.universal_leaderboard (is_invincible DESC, matches_won DESC, total_score DESC, created_at ASC);
+
+-- 5. Enable Row Level Security (RLS)
 ALTER TABLE public.universal_leaderboard ENABLE ROW LEVEL SECURITY;
 
--- 4. Set RLS Policies
--- Allow anyone (including anonymous players) to view the global leaderboard
+-- 6. Set RLS Policies & Table Privileges (read-only for anon/authenticated; writes via service_role API only)
 DROP POLICY IF EXISTS "Allow public read access" ON public.universal_leaderboard;
 CREATE POLICY "Allow public read access"
 ON public.universal_leaderboard
@@ -54,22 +89,60 @@ FOR SELECT
 TO anon, authenticated
 USING (true);
 
--- Allow anyone to submit a finished team score (validated by CHECK constraints)
 DROP POLICY IF EXISTS "Allow public score submission" ON public.universal_leaderboard;
-CREATE POLICY "Allow public score submission"
-ON public.universal_leaderboard
-FOR INSERT
-TO anon, authenticated
-WITH CHECK (
-    char_length(team_name) >= 1 AND
-    char_length(team_name) <= 60 AND
-    char_length(captain_name) >= 1 AND
-    char_length(captain_name) <= 60 AND
-    char_length(mode) >= 1 AND
-    char_length(mode) <= 30 AND
-    total_score >= 0 AND
-    total_score <= 1000
+
+REVOKE INSERT, UPDATE, DELETE ON public.universal_leaderboard FROM anon, authenticated;
+GRANT SELECT ON public.universal_leaderboard TO anon, authenticated;
+
+-- 7. Private rate-limit table for server-side score submission (service_role only)
+CREATE TABLE IF NOT EXISTS public.leaderboard_rate_limits (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    ip_hash TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
--- Explicitly grant SELECT and INSERT; deny UPDATE and DELETE
-GRANT SELECT, INSERT ON public.universal_leaderboard TO anon, authenticated;
+CREATE INDEX IF NOT EXISTS idx_rate_limits_ip_created
+ON public.leaderboard_rate_limits (ip_hash, created_at DESC);
+
+ALTER TABLE public.leaderboard_rate_limits ENABLE ROW LEVEL SECURITY;
+
+REVOKE ALL ON public.leaderboard_rate_limits FROM anon, authenticated;
+
+-- 8. Atomic transactional rate-limit check-and-record RPC (service_role only)
+CREATE OR REPLACE FUNCTION public.check_and_record_rate_limit(
+    p_ip_hash TEXT,
+    p_limit INTEGER DEFAULT 5,
+    p_window_minutes INTEGER DEFAULT 10
+)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    recent_count INTEGER;
+BEGIN
+    PERFORM pg_advisory_xact_lock(hashtext(p_ip_hash));
+
+    DELETE FROM public.leaderboard_rate_limits
+    WHERE created_at < now() - INTERVAL '24 hours';
+
+    SELECT COUNT(*)::INTEGER
+    INTO recent_count
+    FROM public.leaderboard_rate_limits
+    WHERE ip_hash = p_ip_hash
+      AND created_at >= now() - make_interval(mins => p_window_minutes);
+
+    IF recent_count >= p_limit THEN
+        RETURN FALSE;
+    END IF;
+
+    INSERT INTO public.leaderboard_rate_limits (ip_hash)
+    VALUES (p_ip_hash);
+
+    RETURN TRUE;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.check_and_record_rate_limit(TEXT, INTEGER, INTEGER) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.check_and_record_rate_limit(TEXT, INTEGER, INTEGER) TO service_role;

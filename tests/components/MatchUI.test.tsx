@@ -21,6 +21,7 @@ describe('Match UI Components', () => {
     userScore: { runs: 188, wickets: 4, overs: 20 },
     opponentScore: { runs: 172, wickets: 8, overs: 20 },
     margin: 'Won by 16 runs',
+    userBatsFirst: true,
     playerOfTheMatch: {
       playerId: sampleUserXI[0].id,
       playerName: sampleUserXI[0].name,
@@ -33,6 +34,44 @@ describe('Match UI Components', () => {
         playerName: sampleUserXI[0].name,
         runsScored: 78,
         wicketsTaken: 0,
+      },
+    ],
+    userScorecard: [
+      {
+        playerId: sampleUserXI[0].id,
+        playerName: sampleUserXI[0].name,
+        runsScored: 78,
+        ballsFaced: 48,
+        fours: 8,
+        sixes: 3,
+      },
+    ],
+    userBowling: [
+      {
+        playerId: sampleUserXI[1].id,
+        playerName: sampleUserXI[1].name,
+        wicketsTaken: 3,
+        oversBowled: 4,
+        runsConceded: 24,
+      },
+    ],
+    opponentScorecard: [
+      {
+        playerId: opponent.players[0].id,
+        playerName: opponent.players[0].name,
+        runsScored: 64,
+        ballsFaced: 42,
+        fours: 7,
+        sixes: 2,
+      },
+    ],
+    opponentBowling: [
+      {
+        playerId: opponent.players[10].id,
+        playerName: opponent.players[10].name,
+        wicketsTaken: 2,
+        oversBowled: 4,
+        runsConceded: 31,
       },
     ],
   };
@@ -104,5 +143,105 @@ describe('Match UI Components', () => {
     const playBtn = screen.getByRole('button', { name: /play match/i });
     fireEvent.click(playBtn);
     expect(onPlay).toHaveBeenCalledTimes(1);
+  });
+
+  it('forwards onSkipSimulation to LiveSimProgress when simulating', () => {
+    const onSkip = vi.fn();
+    render(
+      <MatchScreen
+        matchIndex={0}
+        totalMatches={7}
+        opponent={opponent}
+        venue={venue}
+        userXI={sampleUserXI}
+        captainId={sampleUserXI[0].id}
+        lastResult={null}
+        isSimulating={true}
+        onPlayMatch={vi.fn()}
+        onNextMatch={vi.fn()}
+        onSkipSimulation={onSkip}
+      />
+    );
+
+    const skipBtn = screen.getByRole('button', { name: /skip to result/i });
+    fireEvent.click(skipBtn);
+    expect(onSkip).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders chasing banner in MatchScreen when tossOutcome.userBatsFirst is false', () => {
+    render(
+      <MatchScreen
+        matchIndex={0}
+        totalMatches={7}
+        opponent={opponent}
+        venue={venue}
+        userXI={sampleUserXI}
+        captainId={sampleUserXI[0].id}
+        lastResult={null}
+        isSimulating={false}
+        tossOutcome={{
+          winner: opponent.name,
+          decision: 'bat',
+          userBatsFirst: false,
+        }}
+        onPlayMatch={vi.fn()}
+        onNextMatch={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText(/chasing/i)).toBeDefined();
+  });
+
+  it('renders both user and opponent batting and bowling in expanded BoxScoreCard', () => {
+    render(
+      <BoxScoreCard
+        result={sampleResult}
+        userTeamName="User XI"
+        opponentName={opponent.name}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /view detailed scorecard/i }));
+
+    expect(screen.getByText('User XI Batting')).toBeDefined();
+    expect(screen.getByText('User XI Bowling')).toBeDefined();
+    expect(screen.getByText(`${opponent.name} Batting`)).toBeDefined();
+    expect(screen.getByText(`${opponent.name} Bowling`)).toBeDefined();
+    expect(screen.getByText(opponent.players[0].name)).toBeDefined();
+    expect(screen.getByText(opponent.players[10].name)).toBeDefined();
+    expect(screen.getByText(sampleUserXI[1].name)).toBeDefined();
+    expect(screen.getByText('3/24 (4 ov)')).toBeDefined();
+    expect(screen.getByText('2/31 (4 ov)')).toBeDefined();
+  });
+
+  it('renders partial chasing overs in BoxScoreCard bowling figures when chase finishes early', () => {
+    const chasingResult: MatchResult = {
+      ...sampleResult,
+      userBatsFirst: false,
+      userScore: { runs: 175, wickets: 3, overs: 18.2 },
+      opponentScore: { runs: 172, wickets: 7, overs: 20 },
+      margin: 'Won by 7 wickets (10b left)',
+      opponentBowling: [
+        {
+          playerId: opponent.players[10].id,
+          playerName: opponent.players[10].name,
+          wicketsTaken: 2,
+          oversBowled: 3.2,
+          runsConceded: 31,
+        },
+      ],
+    };
+
+    render(
+      <BoxScoreCard
+        result={chasingResult}
+        userTeamName="User XI"
+        opponentName={opponent.name}
+      />
+    );
+
+    expect(screen.getByText('(18.2 Overs)')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: /view detailed scorecard/i }));
+    expect(screen.getByText('2/31 (3.2 ov)')).toBeDefined();
   });
 });

@@ -114,4 +114,41 @@ describe('Draft UI Components', () => {
 
     expect(screen.getByText(/RCB Dynamic Duo/i)).toBeDefined();
   });
+
+  it('syncs lineup players when modal transitions from closed with empty players to open with 11 players', () => {
+    const elevenPlayers = playersData.slice(0, 11) as Player[];
+    const onSelectCaptain = vi.fn();
+    const onReorder = vi.fn();
+    const onClose = vi.fn();
+
+    const { rerender } = render(
+      <LineupReorderModal
+        isOpen={false}
+        players={[]}
+        captainId={null}
+        onSelectCaptain={onSelectCaptain}
+        onReorder={onReorder}
+        onClose={onClose}
+      />
+    );
+
+    rerender(
+      <LineupReorderModal
+        isOpen={true}
+        players={elevenPlayers}
+        captainId={elevenPlayers[0].id}
+        onSelectCaptain={onSelectCaptain}
+        onReorder={onReorder}
+        onClose={onClose}
+      />
+    );
+
+    for (const player of elevenPlayers) {
+      expect(screen.getByText(player.name)).toBeDefined();
+    }
+
+    fireEvent.click(screen.getByRole('button', { name: /confirm starting xi/i }));
+    expect(onReorder).toHaveBeenCalledTimes(1);
+    expect(onReorder).toHaveBeenCalledWith(elevenPlayers);
+  });
 });

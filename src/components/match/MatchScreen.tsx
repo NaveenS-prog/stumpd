@@ -6,6 +6,13 @@ import { PitchCard } from './PitchCard';
 import { TossBanner } from './TossBanner';
 import { LiveSimProgress } from './LiveSimProgress';
 import { BoxScoreCard } from './BoxScoreCard';
+import { TossOutcome } from '../../hooks/useStumpdGame';
+
+const DEFAULT_TOSS_OUTCOME: TossOutcome = {
+  winner: 'User XI',
+  decision: 'bat',
+  userBatsFirst: true,
+};
 
 interface MatchScreenProps {
   matchIndex: number;
@@ -16,8 +23,10 @@ interface MatchScreenProps {
   captainId: string | null;
   lastResult: MatchResult | null;
   isSimulating: boolean;
+  tossOutcome?: TossOutcome;
   onPlayMatch: () => void;
   onNextMatch: () => void;
+  onSkipSimulation?: () => void;
 }
 
 export const MatchScreen: React.FC<MatchScreenProps> = ({
@@ -29,8 +38,10 @@ export const MatchScreen: React.FC<MatchScreenProps> = ({
   captainId: _captainId,
   lastResult,
   isSimulating,
+  tossOutcome = DEFAULT_TOSS_OUTCOME,
   onPlayMatch,
   onNextMatch,
+  onSkipSimulation,
 }) => {
   const isFinalMatch = matchIndex >= totalMatches - 1;
 
@@ -53,6 +64,7 @@ export const MatchScreen: React.FC<MatchScreenProps> = ({
           opponentName={opponent.name}
           venueName={venue.name}
           userXI={userXI}
+          onSkip={onSkipSimulation}
         />
       )}
 
@@ -70,8 +82,9 @@ export const MatchScreen: React.FC<MatchScreenProps> = ({
           <PitchCard venue={venue} />
 
           <TossBanner
-            winner="User XI"
-            decision="bat"
+            winner={tossOutcome.winner}
+            decision={tossOutcome.decision}
+            userBatsFirst={tossOutcome.userBatsFirst}
             venueName={venue.name}
           />
 

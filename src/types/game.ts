@@ -1,5 +1,5 @@
 import { Era, IPLEra, Player, PlayerRole } from './player';
-import { MatchResult, OpponentTeam, Venue } from './tournament';
+import { MatchResult } from './tournament';
 
 export interface SlotDefinition {
   id: number;
@@ -25,7 +25,7 @@ export interface SpinResult {
   candidates: Player[];
 }
 
-export type GamePhase = 'home' | 'match-setup' | 'draft' | 'lineup' | 'match' | 'results';
+export type GamePhase = 'home' | 'draft' | 'lineup' | 'match' | 'results';
 
 export interface GameState {
   mode: GameMode;
@@ -40,6 +40,4 @@ export interface GameState {
   currentEra: Era | IPLEra | null;
   currentCandidates: Player[];
   matchResults: MatchResult[];
-  selectedOpponent?: OpponentTeam | null;
-  selectedVenue?: Venue | null;
 }

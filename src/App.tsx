@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useStumpdGame } from './hooks/useStumpdGame';
 import { HomeScreen } from './components/home/HomeScreen';
-import { MatchSetupScreen } from './components/setup/MatchSetupScreen';
 import { SlotProgress } from './components/draft/SlotProgress';
 import { SpinWheels } from './components/draft/SpinWheels';
 import { CandidateList } from './components/draft/CandidateList';
@@ -11,20 +10,14 @@ import { MatchScreen } from './components/match/MatchScreen';
 import { ResultsScreen } from './components/results/ResultsScreen';
 import { UniversalScoreboardModal } from './components/scoreboard/UniversalScoreboardModal';
 import { SLOTS } from './data/slots';
-import { VENUES } from './data/venues';
+import { getMatchOpponentAndVenue } from './engine/simulator';
 import { initAudioUnlock } from './utils/sound';
-import { trackEvent } from './utils/analytics';
 
 export default function App() {
   const {
     screen,
     gameMode,
     activeOpponents,
-    selectedOpponent,
-    selectedVenue,
-    setSelectedOpponent,
-    setSelectedVenue,
-    proceedFromSetupToDraft,
     currentSlotIndex,
     picks,
     captainId,
@@ -37,6 +30,7 @@ export default function App() {
     matchResults,
     lastResult,
     isSimulating,
+    tossOutcome,
     stats,
     isDailyLocked,
     isMuted,
@@ -48,6 +42,7 @@ export default function App() {
     reorderLineup,
     proceedToMatches,
     playCurrentMatch,
+    skipSimulation,
     nextMatch,
     resetGame,
     toggleMute,
@@ -55,19 +50,16 @@ export default function App() {
 
   const [isReorderModalOpen, setIsReorderModalOpen] = useState(false);
   const [isScoreboardOpen, setIsScoreboardOpen] = useState(false);
+  const [scoreboardHighlightId, setScoreboardHighlightId] = useState<string | null>(null);
 
   useEffect(() => {
     initAudioUnlock();
   }, []);
 
-  const currentOpponent =
-    currentMatchIndex === 0 && selectedOpponent
-      ? selectedOpponent
-      : activeOpponents[currentMatchIndex] || activeOpponents[0];
-  const currentVenue =
-    currentMatchIndex === 0 && selectedVenue
-      ? selectedVenue
-      : VENUES[currentMatchIndex % VENUES.length];
+  const { opponent: currentOpponent, venue: currentVenue } = getMatchOpponentAndVenue(
+    currentMatchIndex,
+    activeOpponents
+  );
 
   const getModeTitle = () => {
     switch (gameMode) {
@@ -104,7 +96,10 @@ export default function App() {
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               type="button"
-              onClick={() => setIsScoreboardOpen(true)}
+              onClick={() => {
+                setScoreboardHighlightId(null);
+                setIsScoreboardOpen(true);
+              }}
               className="py-1.5 px-2.5 sm:px-3 rounded-lg bg-[#12261E] hover:bg-[#1A382C] border border-gold-400/40 text-xs font-mono text-gold-300 hover:text-gold-200 transition-all flex items-center gap-1 shrink-0"
             >
               <span>🏆</span>
@@ -114,10 +109,7 @@ export default function App() {
 
             <button
               type="button"
-              onClick={() => {
-                trackEvent('mute_toggled', { nextMuted: !isMuted });
-                toggleMute();
-              }}
+              onClick={toggleMute}
               className="p-1.5 sm:p-2 rounded-lg bg-[#12261E] border border-[#1F3F32] hover:border-gold-400/50 text-xs text-turf-300 hover:text-white transition-all shrink-0"
               title={isMuted ? 'Unmute Sound' : 'Mute Sound'}
               aria-label="Toggle Sound"
@@ -146,22 +138,6 @@ export default function App() {
             onStartGame={startMode}
             stats={stats}
             isDailyLocked={isDailyLocked}
-            isMuted={isMuted}
-            onToggleMute={toggleMute}
-          />
-        )}
-
-        {screen === 'match-setup' && (
-          <MatchSetupScreen
-            gameMode={gameMode}
-            opponents={activeOpponents}
-            venues={VENUES}
-            selectedOpponent={selectedOpponent}
-            selectedVenue={selectedVenue}
-            onSelectOpponent={setSelectedOpponent}
-            onSelectVenue={setSelectedVenue}
-            onProceedToDraft={proceedFromSetupToDraft}
-            onBackToHome={resetGame}
           />
         )}
 
@@ -185,10 +161,10 @@ export default function App() {
                       mulligansRemaining={mulligansRemaining}
                       gameMode={gameMode}
                       fixtureInfo={{
-                        opponentName: selectedOpponent.name,
-                        venueName: selectedVenue.name,
-                        pitchType: selectedVenue.pitchType,
-                        pitchDescription: selectedVenue.pitchDescription,
+                        opponentName: currentOpponent.name,
+                        venueName: currentVenue.name,
+                        pitchType: currentVenue.pitchType,
+                        pitchDescription: currentVenue.pitchDescription,
                       }}
                       onSpin={spinReels}
                       onMulligan={mulligan}
@@ -267,8 +243,10 @@ export default function App() {
             captainId={captainId}
             lastResult={lastResult}
             isSimulating={isSimulating}
+            tossOutcome={tossOutcome}
             onPlayMatch={playCurrentMatch}
             onNextMatch={nextMatch}
+            onSkipSimulation={skipSimulation}
           />
         )}
 
@@ -280,6 +258,10 @@ export default function App() {
             opponents={activeOpponents}
             gameMode={gameMode}
             onPlayAgain={resetGame}
+            onOpenScoreboard={(id) => {
+              setScoreboardHighlightId(id ?? null);
+              setIsScoreboardOpen(true);
+            }}
           />
         )}
       </main>
@@ -287,6 +269,7 @@ export default function App() {
       <UniversalScoreboardModal
         isOpen={isScoreboardOpen}
         onClose={() => setIsScoreboardOpen(false)}
+        highlightEntryId={scoreboardHighlightId}
       />
 
       {/* Footer */}

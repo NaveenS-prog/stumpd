@@ -6,35 +6,17 @@ interface HomeScreenProps {
   onStartGame: (mode: GameMode) => void;
   stats: StoredGameStats;
   isDailyLocked: boolean;
-  isMuted: boolean;
-  onToggleMute: () => void;
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({
   onStartGame,
   stats,
   isDailyLocked,
-  isMuted,
-  onToggleMute,
 }) => {
   const [showRules, setShowRules] = useState(false);
 
   return (
     <div className="w-full max-w-4xl mx-auto pb-16">
-      {/* Top Bar with Sound Toggle */}
-      <div className="flex items-center justify-between py-2 mb-4 sm:mb-6">
-        <span className="text-[10px] sm:text-xs font-mono uppercase text-gold-400 font-bold tracking-widest truncate mr-2">
-          Stumpd. Dual Tournament Edition
-        </span>
-        <button
-          type="button"
-          onClick={onToggleMute}
-          className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-turf-900 border border-turf-700 text-xs font-mono text-turf-300 hover:text-white flex items-center gap-1.5 transition-all shrink-0"
-        >
-          <span>{isMuted ? '🔇 Mute' : '🔊 Sound'}</span>
-        </button>
-      </div>
-
       {/* Hero Banner */}
       <div className="text-center py-6 sm:py-8 px-3 sm:px-4 bg-gradient-to-b from-turf-900 via-turf-950 to-turf-900 border border-turf-700/80 rounded-2xl sm:rounded-3xl shadow-2xl mb-6 sm:mb-8 relative overflow-hidden">
         <div className="text-4xl sm:text-5xl md:text-6xl mb-2 sm:mb-3">🏏</div>

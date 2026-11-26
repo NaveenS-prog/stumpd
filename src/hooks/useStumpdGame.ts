@@ -1,10 +1,9 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Player, Era, IPLEra } from '../types/player';
 import { GameMode, GamePhase } from '../types/game';
-import { MatchResult, OpponentTeam, Venue } from '../types/tournament';
+import { MatchResult, OpponentTeam } from '../types/tournament';
 import { SLOTS } from '../data/slots';
 import { INTERNATIONAL_OPPONENTS, IPL_OPPONENTS } from '../data/opponents';
-import { VENUES } from '../data/venues';
 import { draftMachine } from '../engine/draftMachine';
 import { simulateMatch, getMatchOpponentAndVenue } from '../engine/simulator';
 import { getDailySeed, createSeededRandom } from '../engine/dailySeed';
@@ -99,11 +98,6 @@ export function useStumpdGame() {
   const activeOpponents: OpponentTeam[] =
     gameMode === 'IPL' ? IPL_OPPONENTS : INTERNATIONAL_OPPONENTS;
 
-  const [selectedOpponent, setSelectedOpponent] = useState<OpponentTeam>(
-    () => INTERNATIONAL_OPPONENTS[0]
-  );
-  const [selectedVenue, setSelectedVenue] = useState<Venue>(() => VENUES[0]);
-
   useEffect(() => {
     setStats(getGameStats());
     setIsDailyLocked(isDailyCompletedToday());
@@ -191,45 +185,34 @@ export function useStumpdGame() {
 
     let resolvedMode: GameMode = 'International';
     let mulligans = 3;
-    let targetScreen: GamePhase = 'draft';
 
     const lower = modeInput.toLowerCase();
     if (lower.includes('ipl')) {
       resolvedMode = 'IPL';
       mulligans = 3;
       dailyRngRef.current = null;
-      targetScreen = 'draft';
     } else if (lower.includes('daily')) {
       resolvedMode = 'Daily Stumpd';
       mulligans = 0;
       const seed = getDailySeed();
       dailyRngRef.current = createSeededRandom(seed);
-      targetScreen = 'draft';
     } else if (lower.includes('practice')) {
       resolvedMode = 'Practice Mode';
       mulligans = 99;
       dailyRngRef.current = null;
-      targetScreen = 'draft';
     } else if (lower === 'spin') {
       resolvedMode = 'International';
       mulligans = 3;
       dailyRngRef.current = null;
-      targetScreen = 'draft';
     } else {
       // Default / International Tour
       resolvedMode = 'International';
       mulligans = 3;
       dailyRngRef.current = null;
-      targetScreen = 'draft';
     }
 
-    const opps = resolvedMode === 'IPL' ? IPL_OPPONENTS : INTERNATIONAL_OPPONENTS;
-    const { opponent: initialOpp, venue: defaultVenue } = getMatchOpponentAndVenue(0, opps);
-    setSelectedOpponent(initialOpp);
-    setSelectedVenue(defaultVenue);
-
     setGameMode(resolvedMode);
-    setScreen(targetScreen);
+    setScreen('draft');
     setCurrentSlotIndex(0);
     setPicks([]);
     setCaptainId(null);
@@ -246,15 +229,6 @@ export function useStumpdGame() {
 
     trackEvent('round_started', { mode: resolvedMode });
   }, [clearSimTimeout, clearSpinInterval]);
-
-  const proceedFromSetupToDraft = useCallback(() => {
-    setScreen('draft');
-    setCurrentSlotIndex(0);
-    setCurrentTeam(null);
-    setCurrentEra(null);
-    setCurrentCandidates([]);
-    setIsSpinning(false);
-  }, []);
 
   const spinReels = useCallback(() => {
     if (isSpinning) return;
@@ -446,11 +420,6 @@ export function useStumpdGame() {
     setScreen,
     gameMode,
     activeOpponents,
-    selectedOpponent,
-    selectedVenue,
-    setSelectedOpponent,
-    setSelectedVenue,
-    proceedFromSetupToDraft,
     currentSlotIndex,
     picks,
     captainId,

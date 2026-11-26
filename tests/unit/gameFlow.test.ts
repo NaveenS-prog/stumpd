@@ -86,8 +86,8 @@ describe('Game State Flow Integration', () => {
       result.current.startMode('International');
     });
     expect(result.current.screen).toBe('draft');
-    expect(result.current.selectedOpponent).toBeDefined();
-    expect(result.current.selectedVenue).toBeDefined();
+    expect(result.current.gameMode).toBe('International');
+    expect(result.current.activeOpponents.length).toBeGreaterThan(0);
   });
 
   it('prevents duplicate picks and caps drafted picks at 11', () => {

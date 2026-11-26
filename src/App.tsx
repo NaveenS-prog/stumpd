@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useStumpdGame } from './hooks/useStumpdGame';
 import { HomeScreen } from './components/home/HomeScreen';
-import { MatchSetupScreen } from './components/setup/MatchSetupScreen';
 import { SlotProgress } from './components/draft/SlotProgress';
 import { SpinWheels } from './components/draft/SpinWheels';
 import { CandidateList } from './components/draft/CandidateList';
@@ -11,21 +10,14 @@ import { MatchScreen } from './components/match/MatchScreen';
 import { ResultsScreen } from './components/results/ResultsScreen';
 import { UniversalScoreboardModal } from './components/scoreboard/UniversalScoreboardModal';
 import { SLOTS } from './data/slots';
-import { VENUES } from './data/venues';
 import { getMatchOpponentAndVenue } from './engine/simulator';
 import { initAudioUnlock } from './utils/sound';
-import { trackEvent } from './utils/analytics';
 
 export default function App() {
   const {
     screen,
     gameMode,
     activeOpponents,
-    selectedOpponent,
-    selectedVenue,
-    setSelectedOpponent,
-    setSelectedVenue,
-    proceedFromSetupToDraft,
     currentSlotIndex,
     picks,
     captainId,
@@ -117,10 +109,7 @@ export default function App() {
 
             <button
               type="button"
-              onClick={() => {
-                trackEvent('mute_toggled', { nextMuted: !isMuted });
-                toggleMute();
-              }}
+              onClick={toggleMute}
               className="p-1.5 sm:p-2 rounded-lg bg-[#12261E] border border-[#1F3F32] hover:border-gold-400/50 text-xs text-turf-300 hover:text-white transition-all shrink-0"
               title={isMuted ? 'Unmute Sound' : 'Mute Sound'}
               aria-label="Toggle Sound"
@@ -149,22 +138,6 @@ export default function App() {
             onStartGame={startMode}
             stats={stats}
             isDailyLocked={isDailyLocked}
-            isMuted={isMuted}
-            onToggleMute={toggleMute}
-          />
-        )}
-
-        {screen === 'match-setup' && (
-          <MatchSetupScreen
-            gameMode={gameMode}
-            opponents={activeOpponents}
-            venues={VENUES}
-            selectedOpponent={selectedOpponent}
-            selectedVenue={selectedVenue}
-            onSelectOpponent={setSelectedOpponent}
-            onSelectVenue={setSelectedVenue}
-            onProceedToDraft={proceedFromSetupToDraft}
-            onBackToHome={resetGame}
           />
         )}
 

@@ -337,12 +337,24 @@ function ballsLeftToOvers(ballsLeft: number): number {
   return ballsToOvers(Math.max(1, Math.min(120, 120 - ballsLeft)));
 }
 
+function isCaptainMatch(
+  playerId: string,
+  playerName: string,
+  captainIdentifier?: string
+): boolean {
+  return (
+    Boolean(captainIdentifier) &&
+    (playerId === captainIdentifier || playerName === captainIdentifier)
+  );
+}
+
 function combineTeamPerformances(
   batting: PlayerPerformance[],
   bowling: PlayerPerformance[],
   captainIdentifier?: string
 ): PlayerPerformance[] {
-  return batting.map((bat) => {
+  const battedIds = new Set(batting.map((bat) => bat.playerId));
+  const combined: PlayerPerformance[] = batting.map((bat) => {
     const bowl = bowling.find((b) => b.playerId === bat.playerId);
     return {
       playerId: bat.playerId,
@@ -354,11 +366,27 @@ function combineTeamPerformances(
       wicketsTaken: bowl?.wicketsTaken ?? 0,
       oversBowled: bowl?.oversBowled ?? 0,
       runsConceded: bowl?.runsConceded ?? 0,
-      isCaptain:
-        Boolean(captainIdentifier) &&
-        (bat.playerId === captainIdentifier || bat.playerName === captainIdentifier),
+      isCaptain: isCaptainMatch(bat.playerId, bat.playerName, captainIdentifier),
     };
   });
+
+  for (const bowl of bowling) {
+    if (battedIds.has(bowl.playerId)) continue;
+    combined.push({
+      playerId: bowl.playerId,
+      playerName: bowl.playerName,
+      runsScored: 0,
+      ballsFaced: 0,
+      fours: 0,
+      sixes: 0,
+      wicketsTaken: bowl.wicketsTaken ?? 0,
+      oversBowled: bowl.oversBowled ?? 0,
+      runsConceded: bowl.runsConceded ?? 0,
+      isCaptain: isCaptainMatch(bowl.playerId, bowl.playerName, captainIdentifier),
+    });
+  }
+
+  return combined;
 }
 
 export function simulateMatch(

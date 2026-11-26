@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { TrophyHero } from '../../src/components/results/TrophyHero';
 import { ResultsScreen } from '../../src/components/results/ResultsScreen';
@@ -11,6 +11,15 @@ import playersData from '../../src/data/players.json';
 describe('Invincible 7-0 & Heartbreak Near-Miss System', () => {
   const sampleUserXI: Player[] = playersData.slice(0, 11) as Player[];
   const opponents = INTERNATIONAL_OPPONENTS;
+  const originalShareDescriptor = Object.getOwnPropertyDescriptor(navigator, 'share');
+
+  afterEach(() => {
+    if (originalShareDescriptor) {
+      Object.defineProperty(navigator, 'share', originalShareDescriptor);
+    } else {
+      Reflect.deleteProperty(navigator, 'share');
+    }
+  });
 
   it('renders Invincible 7-0 Trophy styling when undefeated', () => {
     render(

@@ -107,3 +107,42 @@ ON public.leaderboard_rate_limits (ip_hash, created_at DESC);
 ALTER TABLE public.leaderboard_rate_limits ENABLE ROW LEVEL SECURITY;
 
 REVOKE ALL ON public.leaderboard_rate_limits FROM anon, authenticated;
+
+-- 8. Atomic transactional rate-limit check-and-record RPC (service_role only)
+CREATE OR REPLACE FUNCTION public.check_and_record_rate_limit(
+    p_ip_hash TEXT,
+    p_limit INTEGER DEFAULT 5,
+    p_window_minutes INTEGER DEFAULT 10
+)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    recent_count INTEGER;
+BEGIN
+    PERFORM pg_advisory_xact_lock(hashtext(p_ip_hash));
+
+    DELETE FROM public.leaderboard_rate_limits
+    WHERE created_at < now() - INTERVAL '24 hours';
+
+    SELECT COUNT(*)::INTEGER
+    INTO recent_count
+    FROM public.leaderboard_rate_limits
+    WHERE ip_hash = p_ip_hash
+      AND created_at >= now() - make_interval(mins => p_window_minutes);
+
+    IF recent_count >= p_limit THEN
+        RETURN FALSE;
+    END IF;
+
+    INSERT INTO public.leaderboard_rate_limits (ip_hash)
+    VALUES (p_ip_hash);
+
+    RETURN TRUE;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.check_and_record_rate_limit(TEXT, INTEGER, INTEGER) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.check_and_record_rate_limit(TEXT, INTEGER, INTEGER) TO service_role;

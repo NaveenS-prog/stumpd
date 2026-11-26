@@ -231,12 +231,12 @@ export function useStumpdGame() {
   }, [clearSimTimeout, clearSpinInterval]);
 
   const spinReels = useCallback(() => {
-    if (isSpinning) return;
+    if (isSpinning || spinIntervalRef.current !== null) return;
     executeSpin(currentSlotIndex, picks);
   }, [currentSlotIndex, executeSpin, isSpinning, picks]);
 
   const mulligan = useCallback(() => {
-    if (isSpinning || mulligansRemaining <= 0) return;
+    if (isSpinning || spinIntervalRef.current !== null || mulligansRemaining <= 0) return;
     setMulligansRemaining((prev) => Math.max(0, prev - 1));
     executeSpin(currentSlotIndex, picks);
   }, [currentSlotIndex, executeSpin, isSpinning, mulligansRemaining, picks]);
@@ -257,12 +257,13 @@ export function useStumpdGame() {
       setCurrentSlotIndex(nextSlot);
 
       // Reset wheels and candidates for the next slot!
+      clearSpinInterval();
       setCurrentTeam(null);
       setCurrentEra(null);
       setCurrentCandidates([]);
       setIsSpinning(false);
     },
-    [captainId, currentSlotIndex, picks]
+    [captainId, clearSpinInterval, currentSlotIndex, picks]
   );
 
   const setCaptain = useCallback((playerId: string) => {

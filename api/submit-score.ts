@@ -7,9 +7,8 @@ import type { GlobalLeaderboardEntry } from '../src/services/supabase';
 import type { Player } from '../src/types/player';
 
 const VALID_MODES = new Set(['International', 'IPL', 'Daily Stumpd']);
-const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
-const RATE_LIMIT_MAX_SUBMISSIONS = 5;
-const RATE_LIMIT_RETENTION_MS = 24 * 60 * 60 * 1000;
+const RATE_LIMIT_MAX = 5;
+const RATE_LIMIT_WINDOW_MINUTES = 10;
 
 const PLAYER_BY_ID = new Map<string, Player>(
   (playersData as Player[]).map((player) => [player.id, player])
@@ -188,50 +187,35 @@ export async function handleSubmitScore(
     );
   }
 
-  const supabase =
+  const adminClient =
     supabaseClientOverride ??
     createClient(supabaseUrl, serviceKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
-  const salt = process.env.RATE_LIMIT_SALT || serviceKey.slice(0, 16);
+  const salt =
+    process.env.RATE_LIMIT_SALT ||
+    createHash('sha256').update(serviceKey).digest('hex').slice(0, 16);
   const ipHash = hashClientIp(extractClientIp(request), salt);
-  const nowMs = Date.now();
-  const windowStartIso = new Date(nowMs - RATE_LIMIT_WINDOW_MS).toISOString();
 
-  const { count, error: rateCountError } = await supabase
-    .from('leaderboard_rate_limits')
-    .select('id', { count: 'exact', head: true })
-    .eq('ip_hash', ipHash)
-    .gte('created_at', windowStartIso);
+  const { data: allowed, error: rateError } = await adminClient.rpc(
+    'check_and_record_rate_limit',
+    {
+      p_ip_hash: ipHash,
+      p_limit: RATE_LIMIT_MAX,
+      p_window_minutes: RATE_LIMIT_WINDOW_MINUTES,
+    }
+  );
 
-  if (rateCountError) {
-    return jsonResponse({ error: 'Failed to verify submission rate limit' }, 500);
+  if (rateError || typeof allowed !== 'boolean') {
+    return jsonResponse({ error: 'Rate limit check failed' }, 500);
   }
 
-  if ((count ?? 0) >= RATE_LIMIT_MAX_SUBMISSIONS) {
+  if (allowed === false) {
     return jsonResponse(
       { error: 'Rate limit exceeded. Please try again in a few minutes.' },
       429
     );
-  }
-
-  const { error: rateInsertError } = await supabase
-    .from('leaderboard_rate_limits')
-    .insert({ ip_hash: ipHash });
-
-  if (rateInsertError) {
-    return jsonResponse({ error: 'Failed to record submission rate limit' }, 500);
-  }
-
-  const cleanupCutoffIso = new Date(nowMs - RATE_LIMIT_RETENTION_MS).toISOString();
-  try {
-    await supabase
-      .from('leaderboard_rate_limits')
-      .delete()
-      .lt('created_at', cleanupCutoffIso);
-  } catch {
-    // Best-effort cleanup of expired rate-limit records
   }
 
   const scoreBreakdown = calculateUniversalTeamScore(
@@ -241,7 +225,7 @@ export async function handleSubmitScore(
   const synergiesCount = getActiveSynergies(submission.players).length;
   const isInvincible = submission.matchesWon === 7 && submission.totalMatches === 7;
 
-  const { data, error: insertError } = await supabase
+  const { data, error: insertError } = await adminClient
     .from('universal_leaderboard')
     .insert({
       team_name: submission.teamName,

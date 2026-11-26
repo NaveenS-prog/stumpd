@@ -182,5 +182,84 @@ describe('Tactical Match Simulation Engine', () => {
     expect(
       defendLoss.opponentBowling!.reduce((sum, b) => sum + (b.runsConceded ?? 0), 0)
     ).toBe(defendLoss.userScore.runs);
+
+    // Defending win (userBatsFirst = true, won = true): full 20-over bowling and batting conservation
+    const defendWin = simulateMatch(sampleUserXI, opp, chepauk, sampleUserXI[0].id, () => 0.05, true);
+    expect(defendWin.won).toBe(true);
+    expect(defendWin.userBatsFirst).toBe(true);
+    expect(defendWin.userScore.overs).toBe(20);
+    expect(defendWin.opponentScore.overs).toBe(20);
+    expect(
+      defendWin.userScorecard!.reduce((sum, p) => sum + (p.runsScored ?? 0), 0)
+    ).toBe(defendWin.userScore.runs);
+    expect(
+      defendWin.userScorecard!.reduce((sum, p) => sum + (p.ballsFaced ?? 0), 0)
+    ).toBeLessThanOrEqual(120);
+    expect(
+      defendWin.userBowling!.reduce((sum, b) => sum + oversToBalls(b.oversBowled ?? 0), 0)
+    ).toBe(120);
+    expect(
+      defendWin.userBowling!.reduce((sum, b) => sum + (b.runsConceded ?? 0), 0)
+    ).toBe(defendWin.opponentScore.runs);
+    expect(
+      defendWin.userBowling!.reduce((sum, b) => sum + (b.wicketsTaken ?? 0), 0)
+    ).toBe(defendWin.opponentScore.wickets);
+    for (const b of defendWin.userBowling!) {
+      expect(oversToBalls(b.oversBowled ?? 0)).toBeLessThanOrEqual(24);
+    }
+    expect(
+      defendWin.opponentBowling!.reduce((sum, b) => sum + oversToBalls(b.oversBowled ?? 0), 0)
+    ).toBe(120);
+    expect(
+      defendWin.opponentBowling!.reduce((sum, b) => sum + (b.runsConceded ?? 0), 0)
+    ).toBe(defendWin.userScore.runs);
+    expect(
+      defendWin.opponentBowling!.reduce((sum, b) => sum + (b.wicketsTaken ?? 0), 0)
+    ).toBe(defendWin.userScore.wickets);
+    for (const b of defendWin.opponentBowling!) {
+      expect(oversToBalls(b.oversBowled ?? 0)).toBeLessThanOrEqual(24);
+    }
+  });
+
+  it('includes non-batting frontline bowler at #11 in topPerformers and playerOfTheMatch', () => {
+    const allPlayers = playersData as Player[];
+    const lowBowlingBatters = allPlayers
+      .filter((p) => p.id !== 'jasprit-bumrah' && p.bowlingRating <= 25)
+      .slice(0, 10);
+    const bumrah = allPlayers.find((p) => p.id === 'jasprit-bumrah')!;
+    const xiWithTailPacer: Player[] = [...lowBowlingBatters, bumrah];
+
+    const result = simulateMatch(
+      xiWithTailPacer,
+      OPPONENTS[0],
+      balancedVenue,
+      bumrah.id,
+      () => 0.05,
+      true
+    );
+
+    expect(result.won).toBe(true);
+    expect(result.userScore.wickets).toBeLessThanOrEqual(3);
+    expect(result.userScorecard!.some((p) => p.playerId === bumrah.id)).toBe(false);
+
+    const bumrahBowling = result.userBowling!.find((b) => b.playerId === bumrah.id);
+    expect(bumrahBowling).toBeDefined();
+    expect(bumrahBowling!.wicketsTaken).toBeGreaterThanOrEqual(4);
+
+    const inTopPerformers = result.topPerformers.find((p) => p.playerId === bumrah.id);
+    expect(inTopPerformers).toBeDefined();
+    expect(result.playerOfTheMatch?.playerId).toBe(bumrah.id);
+    expect(result.playerOfTheMatch).toMatchObject({
+      playerId: bumrah.id,
+      playerName: bumrah.name,
+      runsScored: 0,
+      ballsFaced: 0,
+      fours: 0,
+      sixes: 0,
+      wicketsTaken: bumrahBowling!.wicketsTaken,
+      oversBowled: bumrahBowling!.oversBowled,
+      runsConceded: bumrahBowling!.runsConceded,
+      isCaptain: true,
+    });
   });
 });

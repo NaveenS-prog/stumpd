@@ -1,10 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 const mockSelect = vi.fn();
-const mockInsert = vi.fn();
 const mockFrom = vi.fn(() => ({
   select: mockSelect,
-  insert: mockInsert,
 }));
 
 vi.mock('@supabase/supabase-js', () => ({

@@ -334,6 +334,62 @@ describe('Game State Flow Integration', () => {
     }
   });
 
+  it('prevents double-decrement on same-render mulligan double-click and clears interval in draftPlayer', () => {
+    vi.useFakeTimers();
+    vi.stubEnv('NODE_ENV', 'development');
+    vi.stubEnv('VITEST', 'false');
+
+    try {
+      const setIntervalSpy = vi.spyOn(globalThis, 'setInterval');
+      const clearIntervalSpy = vi.spyOn(globalThis, 'clearInterval');
+      const { result, unmount } = renderHook(() => useStumpdGame());
+
+      act(() => {
+        result.current.startMode('International');
+      });
+      expect(result.current.mulligansRemaining).toBe(3);
+
+      // Same-render double-click on mulligan() must only decrement once
+      act(() => {
+        result.current.mulligan();
+        result.current.mulligan();
+      });
+      expect(result.current.isSpinning).toBe(true);
+      expect(result.current.mulligansRemaining).toBe(2);
+      expect(setIntervalSpy).toHaveBeenCalledTimes(1);
+      const spinTimerId = setIntervalSpy.mock.results[0]?.value;
+
+      // Drafting a player mid-spin must clear the active spin interval so future spins are not blocked
+      const firstPlayer = playersData[0] as Player;
+      act(() => {
+        result.current.draftPlayer(firstPlayer);
+      });
+      expect(result.current.isSpinning).toBe(false);
+      expect(result.current.picks).toHaveLength(1);
+      expect(result.current.currentTeam).toBeNull();
+      expect(clearIntervalSpy).toHaveBeenCalledWith(spinTimerId);
+
+      // Advancing timers after draftPlayer must not emit stale reel updates
+      act(() => {
+        vi.advanceTimersByTime(500);
+      });
+      expect(result.current.currentTeam).toBeNull();
+      expect(result.current.isSpinning).toBe(false);
+
+      // Subsequent spinReels works cleanly because spinIntervalRef was cleared
+      act(() => {
+        result.current.spinReels();
+      });
+      expect(result.current.isSpinning).toBe(true);
+      expect(setIntervalSpy).toHaveBeenCalledTimes(2);
+      unmount();
+    } finally {
+      vi.restoreAllMocks();
+      vi.unstubAllEnvs();
+      vi.useRealTimers();
+    }
+  });
+
   it('keeps Daily Stumpd tossOutcome and match result deterministic across runs', () => {
     const runDailyOnce = () => {
       localStorage.clear();

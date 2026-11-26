@@ -1,7 +1,16 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { formatEmojiGrid, shareCampaignResult } from '../../src/utils/share';
 
 describe('Social Share Formatter', () => {
+  const originalShareDescriptor = Object.getOwnPropertyDescriptor(navigator, 'share');
+
+  afterEach(() => {
+    if (originalShareDescriptor) {
+      Object.defineProperty(navigator, 'share', originalShareDescriptor);
+    } else {
+      Reflect.deleteProperty(navigator, 'share');
+    }
+  });
   it('formats tournament match outcomes into a clean emoji grid string', () => {
     const matchResults = [true, true, false, true, true, true, true]; // 6-1 Champions
     const text = formatEmojiGrid(matchResults, 'Spin Mode', 89);

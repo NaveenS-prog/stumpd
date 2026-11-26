@@ -27,57 +27,47 @@ const VALID_PLAYERS: Player[] = VALID_PLAYER_IDS.map((id) => {
 });
 
 interface MockSupabaseOptions {
-  rateCount?: number;
-  rateCountError?: { message: string } | null;
-  rateInsertError?: { message: string } | null;
+  rateLimitAllowed?: boolean;
+  rateLimitError?: { message: string } | null;
   leaderboardInsertError?: { message: string } | null;
+}
+
+interface RateLimitRpcCall {
+  fnName: string;
+  args: {
+    p_ip_hash: string;
+    p_limit: number;
+    p_window_minutes: number;
+  };
 }
 
 function createMockSupabase(options: MockSupabaseOptions = {}) {
   const {
-    rateCount = 0,
-    rateCountError = null,
-    rateInsertError = null,
+    rateLimitAllowed = true,
+    rateLimitError = null,
     leaderboardInsertError = null,
   } = options;
 
-  const rateLimitQueries: Array<{ ipHash: string; gteTimestamp: string }> = [];
-  const rateLimitInserts: Array<{ ip_hash: string }> = [];
-  const rateLimitDeletes: Array<{ ltTimestamp: string }> = [];
+  const rateLimitCalls: RateLimitRpcCall[] = [];
   const leaderboardInserts: Array<Record<string, unknown>> = [];
 
   const mockClient = {
-    from: vi.fn((table: string) => {
-      if (table === 'leaderboard_rate_limits') {
-        return {
-          select: vi.fn(() => {
-            const state = { ipHash: '', gteTimestamp: '' };
-            const chain = {
-              eq: vi.fn((col: string, val: string) => {
-                if (col === 'ip_hash') state.ipHash = val;
-                return chain;
-              }),
-              gte: vi.fn(async (col: string, val: string) => {
-                if (col === 'created_at') state.gteTimestamp = val;
-                rateLimitQueries.push({ ...state });
-                return { count: rateCount, error: rateCountError };
-              }),
-            };
-            return chain;
-          }),
-          insert: vi.fn(async (row: { ip_hash: string }) => {
-            rateLimitInserts.push(row);
-            return { error: rateInsertError };
-          }),
-          delete: vi.fn(() => ({
-            lt: vi.fn(async (_col: string, val: string) => {
-              rateLimitDeletes.push({ ltTimestamp: val });
-              return { error: null };
-            }),
-          })),
-        };
+    rpc: vi.fn(
+      async (
+        fnName: string,
+        args: { p_ip_hash: string; p_limit: number; p_window_minutes: number }
+      ) => {
+        if (fnName !== 'check_and_record_rate_limit') {
+          throw new Error(`Unexpected rpc: ${fnName}`);
+        }
+        rateLimitCalls.push({ fnName, args });
+        if (rateLimitError) {
+          return { data: null, error: rateLimitError };
+        }
+        return { data: rateLimitAllowed, error: null };
       }
-
+    ),
+    from: vi.fn((table: string) => {
       if (table === 'universal_leaderboard') {
         return {
           insert: vi.fn((payload: Record<string, unknown>) => {
@@ -109,9 +99,7 @@ function createMockSupabase(options: MockSupabaseOptions = {}) {
 
   return {
     client: mockClient as unknown as SupabaseClient,
-    rateLimitQueries,
-    rateLimitInserts,
-    rateLimitDeletes,
+    rateLimitCalls,
     leaderboardInserts,
   };
 }
@@ -223,9 +211,10 @@ describe('/api/submit-score', () => {
     expect(json.error).toMatch(/json/i);
   });
 
-  it('returns 429 when rate limit count >= 5 within last 10 minutes (including when x-forwarded-for is absent)', async () => {
-    const { client, rateLimitQueries, rateLimitInserts, leaderboardInserts } =
-      createMockSupabase({ rateCount: 5 });
+  it('returns 429 when atomic rate-limit RPC returns false (covering absent headers, x-forwarded-for, and x-real-ip)', async () => {
+    const { client, rateLimitCalls, leaderboardInserts } = createMockSupabase({
+      rateLimitAllowed: false,
+    });
 
     const validPayload = {
       teamName: 'Rate Limited XI',
@@ -247,21 +236,99 @@ describe('/api/submit-score', () => {
     );
     expect(responseWithForwarded.status).toBe(429);
 
-    expect(rateLimitQueries).toHaveLength(2);
-    expect(rateLimitQueries[0].ipHash).toMatch(/^[a-f0-9]{64}$/);
-    expect(rateLimitQueries[1].ipHash).toMatch(/^[a-f0-9]{64}$/);
-    expect(rateLimitQueries[0].ipHash).not.toBe(rateLimitQueries[1].ipHash);
-    expect(rateLimitInserts).toHaveLength(0);
+    const responseWithRealIp = await handleSubmitScore(
+      makeRequest(validPayload, { 'x-real-ip': '198.51.100.77' }),
+      client
+    );
+    expect(responseWithRealIp.status).toBe(429);
+
+    expect(rateLimitCalls).toHaveLength(3);
+    for (const call of rateLimitCalls) {
+      expect(call.fnName).toBe('check_and_record_rate_limit');
+      expect(call.args.p_ip_hash).toMatch(/^[a-f0-9]{64}$/);
+      expect(call.args.p_limit).toBe(5);
+      expect(call.args.p_window_minutes).toBe(10);
+    }
+    expect(rateLimitCalls[0].args.p_ip_hash).not.toBe(rateLimitCalls[1].args.p_ip_hash);
+    expect(rateLimitCalls[2].args.p_ip_hash).not.toBe(rateLimitCalls[0].args.p_ip_hash);
+    expect(rateLimitCalls[2].args.p_ip_hash).not.toBe(rateLimitCalls[1].args.p_ip_hash);
     expect(leaderboardInserts).toHaveLength(0);
+  });
+
+  it('returns generic 500 error when rate-limit RPC fails without leaking raw database error', async () => {
+    const { client, rateLimitCalls, leaderboardInserts } = createMockSupabase({
+      rateLimitError: {
+        message: 'permission denied for function check_and_record_rate_limit in schema public',
+      },
+    });
+
+    const response = await handleSubmitScore(
+      makeRequest(
+        {
+          teamName: 'RPC Error XI',
+          mode: 'International',
+          playerIds: VALID_PLAYER_IDS,
+          captainId: 'ms-dhoni',
+          matchesWon: 3,
+          totalMatches: 4,
+        },
+        { 'x-real-ip': '198.51.100.88' }
+      ),
+      client
+    );
+
+    expect(rateLimitCalls).toHaveLength(1);
+    expect(response.status).toBe(500);
+    const body = await response.json();
+    expect(body).toEqual({ error: 'Rate limit check failed' });
+    expect(leaderboardInserts).toHaveLength(0);
+  });
+
+  it('derives fallback rate-limit salt from full SHA-256 of serviceKey rather than fixed JWT header prefix', async () => {
+    vi.stubEnv('RATE_LIMIT_SALT', '');
+
+    const basePayload = {
+      teamName: 'Salt Fallback XI',
+      mode: 'IPL',
+      playerIds: VALID_PLAYER_IDS,
+      captainId: 'ms-dhoni',
+      matchesWon: 7,
+      totalMatches: 7,
+    };
+
+    const { client: clientA, rateLimitCalls: callsA } = createMockSupabase();
+    vi.stubEnv(
+      'SUPABASE_SERVICE_ROLE_KEY',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIn0.signature-alpha'
+    );
+    const resA = await handleSubmitScore(
+      makeRequest(basePayload, { 'x-real-ip': '203.0.113.55' }),
+      clientA
+    );
+    expect(resA.status).toBe(201);
+
+    const { client: clientB, rateLimitCalls: callsB } = createMockSupabase();
+    vi.stubEnv(
+      'SUPABASE_SERVICE_ROLE_KEY',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIn0.signature-bravo'
+    );
+    const resB = await handleSubmitScore(
+      makeRequest(basePayload, { 'x-real-ip': '203.0.113.55' }),
+      clientB
+    );
+    expect(resB.status).toBe(201);
+
+    expect(callsA[0].args.p_ip_hash).toMatch(/^[a-f0-9]{64}$/);
+    expect(callsB[0].args.p_ip_hash).toMatch(/^[a-f0-9]{64}$/);
+    expect(callsA[0].args.p_ip_hash).not.toBe(callsB[0].args.p_ip_hash);
   });
 
   it('recomputes authoritative score, grade, synergiesCount, captainName, and isInvincible from playerIds and inserts via service client (201)', async () => {
     const {
       client,
-      rateLimitInserts,
-      rateLimitDeletes,
+      rateLimitCalls,
       leaderboardInserts,
-    } = createMockSupabase({ rateCount: 2 });
+    } = createMockSupabase({ rateLimitAllowed: true });
 
     const expectedBreakdown = calculateUniversalTeamScore(VALID_PLAYERS, 'ms-dhoni');
     const expectedSynergiesCount = getActiveSynergies(VALID_PLAYERS).length;
@@ -291,8 +358,11 @@ describe('/api/submit-score', () => {
     expect(response.status).toBe(201);
     const body = await response.json();
 
-    expect(rateLimitInserts).toHaveLength(1);
-    expect(rateLimitDeletes).toHaveLength(1);
+    expect(rateLimitCalls).toHaveLength(1);
+    expect(rateLimitCalls[0].args).toMatchObject({
+      p_limit: 5,
+      p_window_minutes: 10,
+    });
     expect(leaderboardInserts).toHaveLength(1);
 
     expect(leaderboardInserts[0]).toEqual({
@@ -346,7 +416,7 @@ describe('/api/submit-score', () => {
   });
 
   it('normalizes empty or whitespace-only creatorName to null on 201 insert', async () => {
-    const { client, leaderboardInserts } = createMockSupabase({ rateCount: 0 });
+    const { client, leaderboardInserts } = createMockSupabase({ rateLimitAllowed: true });
 
     for (const emptyCreator of ['', '   ']) {
       const response = await handleSubmitScore(
@@ -374,7 +444,7 @@ describe('/api/submit-score', () => {
 
   it('masks raw database error messages behind a generic 500 error', async () => {
     const { client } = createMockSupabase({
-      rateCount: 0,
+      rateLimitAllowed: true,
       leaderboardInsertError: {
         message: 'new row for relation "universal_leaderboard" violates check constraint "chk_gauntlet_consistency"',
       },

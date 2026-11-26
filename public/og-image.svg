@@ -34,8 +34,8 @@
     <text x="0" y="115" font-family="system-ui, -apple-system, sans-serif" font-weight="500" font-size="28" fill="#A7F3D0" max-width="700">
       Draft your ultimate Playing XI across 11 tactical slots.
     </text>
-    <text x="0" y="155" font-family="system-ui, -apple-system, sans-serif" font-weight="400" font-size="24" fill="#6EE7B7">
-      Conquer historic international and IPL dynasties in a ball-by-ball T20 gauntlet.
+    <text x="0" y="155" font-family="system-ui, -apple-system, sans-serif" font-weight="400" font-size="22" fill="#6EE7B7">
+      Conquer historic dynasties in a tactical T20 gauntlet.
     </text>
 
     <!-- Pill Badges -->

@@ -14,7 +14,9 @@ export const TrophyHero: React.FC<TrophyHeroProps> = ({
   totalMatches,
 }) => {
   const isInvincible = isChampion && winsCount === totalMatches && totalMatches >= 7;
-  const isNearMiss = !isChampion && winsCount === totalMatches - 1 && totalMatches >= 5;
+  const isNearMiss = !isChampion && winsCount === 6 && totalMatches === 7;
+  const effectiveFinalist = isFinalist || (!isChampion && winsCount === 5 && totalMatches === 6);
+  const lossesCount = totalMatches - winsCount;
 
   return (
     <div
@@ -39,7 +41,7 @@ export const TrophyHero: React.FC<TrophyHeroProps> = ({
 
       {/* Hero Icon */}
       <div className="text-5xl sm:text-6xl md:text-7xl mb-3 sm:mb-4 animate-bounce">
-        {isInvincible ? '👑 🏆 👑' : isChampion ? '🏆' : isNearMiss ? '💔 🥈' : isFinalist ? '🥈' : '🎖️'}
+        {isInvincible ? '👑 🏆 👑' : isChampion ? '🏆' : isNearMiss ? '💔 🥈' : effectiveFinalist ? '🥈' : '🎖️'}
       </div>
 
       <span
@@ -65,7 +67,7 @@ export const TrophyHero: React.FC<TrophyHeroProps> = ({
           ? 'World Champions!'
           : isNearMiss
           ? 'One Win From Immortality!'
-          : isFinalist
+          : effectiveFinalist
           ? 'Tournament Finalists'
           : 'Campaign Complete'}
       </h1>
@@ -77,7 +79,7 @@ export const TrophyHero: React.FC<TrophyHeroProps> = ({
           ? 'Heartbreak! Just 1 single match kept you from the coveted Invincible 7-0 crown. Spin again and run it back!'
           : isChampion
           ? 'Your tactically engineered XI conquered historical cricket dynasties across all venues!'
-          : isFinalist
+          : effectiveFinalist
           ? 'An exceptional tournament run reaching the final stage against world-class opposition.'
           : 'A valiant effort in the tournament gauntlet. Build back stronger in your next draft.'}
       </p>
@@ -92,9 +94,9 @@ export const TrophyHero: React.FC<TrophyHeroProps> = ({
             : 'bg-turf-900 border-gold-400/40 text-gold-400'
         }`}
       >
-        <span>{winsCount} Wins</span>
-        <span>•</span>
-        <span>{totalMatches - winsCount} Losses</span>
+        <span>
+          {winsCount} {winsCount === 1 ? 'Win' : 'Wins'} • {lossesCount} {lossesCount === 1 ? 'Loss' : 'Losses'}
+        </span>
         {isInvincible && <span className="text-xs bg-gold-400 text-black px-2 py-0.5 rounded font-black ml-1">100% PERFECT</span>}
       </div>
     </div>

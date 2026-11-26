@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Player } from '../../types/player';
-import { MatchResult, OpponentTeam } from '../../types/tournament';
+import { MatchResult, OpponentTeam, PlayerPerformance } from '../../types/tournament';
 import { TrophyHero } from './TrophyHero';
 import { formatEmojiGrid, shareCampaignResult, generateTeamCanvasCard } from '../../utils/share';
 import { calculateUniversalTeamScore } from '../../engine/teamScore';
@@ -49,7 +49,9 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
   const isEligibleForGlobal = gameMode !== 'Practice Mode' && winsCount >= 1;
   const isChampion = winsCount === totalMatches && totalMatches > 0;
   const isFinalist = !isChampion && winsCount >= 4;
-  const isNearMiss = !isChampion && winsCount >= totalMatches - 2 && winsCount < totalMatches && totalMatches >= 5;
+  const isFinalHeartbreak = !isChampion && winsCount === 6 && totalMatches === 7;
+  const isSemiFinalExit = !isChampion && winsCount === 5 && totalMatches === 6;
+  const showNearMissCard = isFinalHeartbreak || isSemiFinalExit;
 
   const primaryLossIdx = matchResults.findIndex((r) => !r.won);
   const primaryLoss = primaryLossIdx !== -1 ? matchResults[primaryLossIdx] : null;
@@ -166,12 +168,57 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
     userXI.reduce((acc, p) => acc + (p.battingRating + p.bowlingRating) / 2, 0) / userXI.length
   );
 
+  const computeCampaignMvp = (): string | undefined => {
+    const userIds = new Set(userXI.map((p) => p.id));
+    const impactByPlayer = new Map<string, { name: string; points: number }>();
+
+    const addPoints = (perf: PlayerPerformance, points: number) => {
+      if (!userIds.has(perf.playerId) || points <= 0) return;
+      const existing = impactByPlayer.get(perf.playerId);
+      if (existing) {
+        existing.points += points;
+      } else {
+        impactByPlayer.set(perf.playerId, { name: perf.playerName, points });
+      }
+    };
+
+    for (const r of matchResults) {
+      const hasScorecards =
+        (r.userScorecard?.length ?? 0) > 0 || (r.userBowling?.length ?? 0) > 0;
+      if (hasScorecards) {
+        const hasBowling = (r.userBowling?.length ?? 0) > 0;
+        for (const p of r.userScorecard ?? []) {
+          const batPts = p.runsScored ?? 0;
+          const bowlPts = hasBowling ? 0 : (p.wicketsTaken ?? 0) * 25;
+          addPoints(p, batPts + bowlPts);
+        }
+        for (const p of r.userBowling ?? []) {
+          addPoints(p, (p.wicketsTaken ?? 0) * 25);
+        }
+      } else {
+        for (const p of r.topPerformers ?? []) {
+          addPoints(p, (p.runsScored ?? 0) + (p.wicketsTaken ?? 0) * 25);
+        }
+      }
+    }
+
+    let bestName: string | undefined;
+    let bestPoints = 0;
+    for (const entry of impactByPlayer.values()) {
+      if (entry.points > bestPoints) {
+        bestPoints = entry.points;
+        bestName = entry.name;
+      }
+    }
+    return bestName;
+  };
+
   const handleShareGrid = async () => {
     const outcomes = matchResults.map((r) => r.won);
-    const allPerformers = matchResults.flatMap((r) => r.topPerformers || []);
-    const mvp = allPerformers.length > 0 ? allPerformers[0].playerName : undefined;
+    const mvp = computeCampaignMvp();
+    const synergiesActive = Math.round(teamScore.synergyPoints / 30);
     const todayStr = gameMode === 'Daily Stumpd' ? getDailyDateString() : undefined;
-    const text = formatEmojiGrid(outcomes, gameMode, avgRating, todayStr, mvp);
+    const text = formatEmojiGrid(outcomes, gameMode, avgRating, todayStr, mvp, synergiesActive);
     const result = await shareCampaignResult(text, `Stumpd ${gameMode} XI`);
     trackEvent('share_clicked', { status: result, mode: gameMode });
     if (result === 'shared' || result === 'copied') {
@@ -199,15 +246,15 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
         totalMatches={totalMatches}
       />
 
-      {/* Heartbreak Breakdown Card for 6-1 or 5-2 near-misses */}
-      {isNearMiss && primaryLoss && (
+      {/* Near-Miss Breakdown Card for 6-1 Final heartbreak or 5-1 Semi-Final exit */}
+      {showNearMissCard && primaryLoss && (
         <div className="bg-gradient-to-r from-red-950/70 via-turf-900 to-red-950/70 border-2 border-red-500/60 rounded-2xl p-5 md:p-6 mb-8 shadow-xl relative overflow-hidden">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-xl">💔</span>
                 <span className="text-xs font-mono font-black uppercase text-red-400 tracking-wider">
-                  The Match That Broke Perfection
+                  {isFinalHeartbreak ? 'The Match That Broke Perfection' : 'Semi-Final Exit (5-1)'}
                 </span>
               </div>
               <h4 className="text-base sm:text-lg font-bold text-white font-mono">
@@ -217,7 +264,9 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
                 Margin: <span className="text-red-400 font-semibold">{primaryLoss.margin}</span> • Score: User XI {primaryLoss.userScore.runs}/{primaryLoss.userScore.wickets} vs {primaryLoss.opponentScore.runs}/{primaryLoss.opponentScore.wickets}
               </p>
               <p className="text-xs text-amber-300/90 font-mono mt-2">
-                💡 Tactical Lesson: 1 more clutch boundary or a second specialist bowler could have delivered the 7-0 Invincible Gauntlet.
+                {isFinalHeartbreak
+                  ? '💡 Tactical Lesson: 1 more clutch boundary or a second specialist bowler could have delivered the 7-0 Invincible Gauntlet.'
+                  : '💡 Tactical Lesson: 1 more clutch boundary or a second specialist bowler in the Semi-Final could have booked a spot in the Final.'}
               </p>
             </div>
             <button

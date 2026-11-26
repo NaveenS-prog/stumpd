@@ -13,10 +13,10 @@ export function formatEmojiGrid(
   const wonFinal = matchOutcomes[matchOutcomes.length - 1] === true;
 
   let title = '🏏 Campaign Completed';
-  if (wins === total && total >= 7) {
+  if (wins === 7 && total === 7) {
     title = '🏆 INVINCIBLE 7-0 Champions';
-  } else if (wins === total - 1 && total >= 5) {
-    title = '🏆 Champions (6-1 Heartbreak)';
+  } else if (wins === 6 && total === 7 && !wonFinal) {
+    title = '🥈 Finalists (6-1 Heartbreak)';
   } else if (wonFinal && wins >= 5) {
     title = '🏆 Champions';
   } else if (wins >= 4) {
@@ -65,7 +65,7 @@ export async function shareCampaignResult(
   const url =
     typeof window !== 'undefined' && window.location.origin && window.location.origin !== 'null'
       ? window.location.origin
-      : 'https://stumpd.pages.dev';
+      : 'https://stumpd-app.vercel.app';
   const fullText = `${text}\n\n🏏 Play Stumpd: ${url}`;
 
   if (typeof navigator !== 'undefined' && navigator.share) {
@@ -156,7 +156,7 @@ export function generateTeamCanvasCard(
     ctx.fillStyle = '#64748B';
     ctx.font = '14px monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('stumpd.app • 11-Slot Tactical Cricket Drafting', 400, 955);
+    ctx.fillText('stumpd-app.vercel.app • 11-Slot Tactical Cricket Drafting', 400, 955);
 
     return canvas.toDataURL('image/png');
   } catch {

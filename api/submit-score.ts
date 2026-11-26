@@ -91,10 +91,10 @@ function validateSubmissionPayload(
       return { ok: false, error: 'creatorName must be a string' };
     }
     const trimmedCreator = body.creatorName.trim();
-    if (trimmedCreator.length < 1 || trimmedCreator.length > 40) {
-      return { ok: false, error: 'creatorName must be between 1 and 40 characters' };
+    if (trimmedCreator.length > 40) {
+      return { ok: false, error: 'creatorName must be 40 characters or fewer' };
     }
-    creatorName = trimmedCreator;
+    creatorName = trimmedCreator.length > 0 ? trimmedCreator : null;
   }
 
   if (typeof body.mode !== 'string' || !VALID_MODES.has(body.mode)) {
@@ -259,10 +259,7 @@ export async function handleSubmitScore(
     .single();
 
   if (insertError || !data) {
-    return jsonResponse(
-      { error: insertError?.message || 'Failed to save leaderboard entry' },
-      500
-    );
+    return jsonResponse({ error: 'Failed to save leaderboard entry' }, 500);
   }
 
   const row = data as DbLeaderboardRow;

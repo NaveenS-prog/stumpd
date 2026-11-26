@@ -344,4 +344,56 @@ describe('/api/submit-score', () => {
     const json = await response.json();
     expect(json.error).toBeTruthy();
   });
+
+  it('normalizes empty or whitespace-only creatorName to null on 201 insert', async () => {
+    const { client, leaderboardInserts } = createMockSupabase({ rateCount: 0 });
+
+    for (const emptyCreator of ['', '   ']) {
+      const response = await handleSubmitScore(
+        makeRequest({
+          teamName: 'Nameless Coach XI',
+          creatorName: emptyCreator,
+          mode: 'International',
+          playerIds: VALID_PLAYER_IDS,
+          captainId: 'ms-dhoni',
+          matchesWon: 2,
+          totalMatches: 3,
+        }),
+        client
+      );
+
+      expect(response.status).toBe(201);
+      const body = await response.json();
+      expect(body.creatorName).toBeUndefined();
+    }
+
+    expect(leaderboardInserts).toHaveLength(2);
+    expect(leaderboardInserts[0].creator_name).toBeNull();
+    expect(leaderboardInserts[1].creator_name).toBeNull();
+  });
+
+  it('masks raw database error messages behind a generic 500 error', async () => {
+    const { client } = createMockSupabase({
+      rateCount: 0,
+      leaderboardInsertError: {
+        message: 'new row for relation "universal_leaderboard" violates check constraint "chk_gauntlet_consistency"',
+      },
+    });
+
+    const response = await handleSubmitScore(
+      makeRequest({
+        teamName: 'DB Error XI',
+        mode: 'IPL',
+        playerIds: VALID_PLAYER_IDS,
+        captainId: 'ms-dhoni',
+        matchesWon: 7,
+        totalMatches: 7,
+      }),
+      client
+    );
+
+    expect(response.status).toBe(500);
+    const body = await response.json();
+    expect(body).toEqual({ error: 'Failed to save leaderboard entry' });
+  });
 });

@@ -33,29 +33,38 @@ function normalizeSupabaseUrl(url?: string): string {
   return url.replace(/\/rest\/v1\/?$/, '').replace(/\/+$/, '');
 }
 
-const rawSupabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseUrl = normalizeSupabaseUrl(rawSupabaseUrl);
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+function getSupabaseConfig(): { url: string; anonKey: string } {
+  const url = normalizeSupabaseUrl(import.meta.env.VITE_SUPABASE_URL);
+  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? '';
+  return { url, anonKey };
+}
 
 export function isSupabaseConfigured(): boolean {
+  const { url, anonKey } = getSupabaseConfig();
   return (
-    typeof supabaseUrl === 'string' &&
-    supabaseUrl.length > 0 &&
-    !supabaseUrl.includes('your-project-id') &&
-    typeof supabaseAnonKey === 'string' &&
-    supabaseAnonKey.length > 0 &&
-    !supabaseAnonKey.includes('your-supabase-anon-key')
+    typeof url === 'string' &&
+    url.length > 0 &&
+    !url.includes('your-project-id') &&
+    typeof anonKey === 'string' &&
+    anonKey.length > 0 &&
+    !anonKey.includes('your-supabase-anon-key')
   );
 }
 
 let clientInstance: SupabaseClient | null = null;
+let cachedConfigKey: string | null = null;
 
 export function getSupabaseClient(): SupabaseClient | null {
-  if (!isSupabaseConfigured() || !supabaseUrl || !supabaseAnonKey) {
+  if (!isSupabaseConfigured()) {
+    clientInstance = null;
+    cachedConfigKey = null;
     return null;
   }
-  if (!clientInstance) {
-    clientInstance = createClient(supabaseUrl, supabaseAnonKey);
+  const { url, anonKey } = getSupabaseConfig();
+  const nextConfigKey = `${url}::${anonKey}`;
+  if (!clientInstance || cachedConfigKey !== nextConfigKey) {
+    clientInstance = createClient(url, anonKey);
+    cachedConfigKey = nextConfigKey;
   }
   return clientInstance;
 }
@@ -87,6 +96,8 @@ export async function fetchGlobalLeaderboard(
     const { data, error } = await client
       .from('universal_leaderboard')
       .select('*')
+      .order('is_invincible', { ascending: false })
+      .order('matches_won', { ascending: false })
       .order('total_score', { ascending: false })
       .order('created_at', { ascending: true })
       .limit(limit);

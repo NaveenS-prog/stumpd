@@ -21,6 +21,12 @@ export const LineupReorderModal: React.FC<LineupReorderModalProps> = ({
   const [ordered, setOrdered] = useState<Player[]>([...players]);
 
   React.useEffect(() => {
+    if (isOpen) {
+      setOrdered([...players]);
+    }
+  }, [isOpen, players]);
+
+  React.useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();

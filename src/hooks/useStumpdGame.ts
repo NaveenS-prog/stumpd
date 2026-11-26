@@ -47,6 +47,20 @@ export function useStumpdGame() {
   const [isMuted, setIsMuted] = useState<boolean>(() => soundEngine.isMuted());
 
   const dailyRngRef = useRef<(() => number) | null>(null);
+  const spinIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const clearSpinInterval = useCallback(() => {
+    if (spinIntervalRef.current !== null) {
+      clearInterval(spinIntervalRef.current);
+      spinIntervalRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      clearSpinInterval();
+    };
+  }, [clearSpinInterval]);
 
   const activeOpponents: OpponentTeam[] =
     gameMode === 'IPL' ? IPL_OPPONENTS : INTERNATIONAL_OPPONENTS;
@@ -71,6 +85,7 @@ export function useStumpdGame() {
 
   const executeSpin = useCallback(
     (slotIdx: number, existingPicks: Player[]) => {
+      clearSpinInterval();
       const rng = getRng();
       const slotDef = SLOTS[slotIdx] || SLOTS[0];
       const isIPL = gameMode === 'IPL';
@@ -102,7 +117,7 @@ export function useStumpdGame() {
       // In browser: rapid exciting tactile reel ticks
       setIsSpinning(true);
       let tickCount = 0;
-      const interval = setInterval(() => {
+      spinIntervalRef.current = setInterval(() => {
         tickCount++;
         soundEngine.playReelTick(0.9 + tickCount * 0.08);
 
@@ -112,7 +127,7 @@ export function useStumpdGame() {
         setCurrentEra(randomEra);
 
         if (tickCount >= 6) {
-          clearInterval(interval);
+          clearSpinInterval();
           const spin = draftMachine.spinSlotReels(slotIdx, gameMode, rng);
           setCurrentTeam(spin.team);
           setCurrentEra(spin.era);
@@ -129,7 +144,7 @@ export function useStumpdGame() {
         }
       }, 55);
     },
-    [gameMode, getRng]
+    [clearSpinInterval, gameMode, getRng]
   );
 
   const startMode = useCallback((modeInput: string) => {
@@ -202,17 +217,19 @@ export function useStumpdGame() {
   }, []);
 
   const spinReels = useCallback(() => {
+    if (isSpinning) return;
     executeSpin(currentSlotIndex, picks);
-  }, [currentSlotIndex, executeSpin, picks]);
+  }, [currentSlotIndex, executeSpin, isSpinning, picks]);
 
   const mulligan = useCallback(() => {
-    if (mulligansRemaining <= 0) return;
+    if (isSpinning || mulligansRemaining <= 0) return;
     setMulligansRemaining((prev) => Math.max(0, prev - 1));
     executeSpin(currentSlotIndex, picks);
-  }, [currentSlotIndex, executeSpin, mulligansRemaining, picks]);
+  }, [currentSlotIndex, executeSpin, isSpinning, mulligansRemaining, picks]);
 
   const draftPlayer = useCallback(
     (player: Player) => {
+      if (picks.length >= SLOTS.length || picks.some((p) => p.id === player.id)) return;
       soundEngine.playCardPick();
 
       const nextPicks = [...picks, player];
@@ -313,6 +330,7 @@ export function useStumpdGame() {
   }, [activeOpponents.length, currentMatchIndex, gameMode, lastResult, matchResults]);
 
   const resetGame = useCallback(() => {
+    clearSpinInterval();
     setScreen('home');
     setPicks([]);
     setCaptainId(null);
@@ -326,7 +344,7 @@ export function useStumpdGame() {
     setLastResult(null);
     setStats(getGameStats());
     setIsDailyLocked(isDailyCompletedToday());
-  }, []);
+  }, [clearSpinInterval]);
 
   const toggleMute = useCallback(() => {
     const next = soundEngine.toggleMute();

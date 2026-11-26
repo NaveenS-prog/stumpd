@@ -124,5 +124,63 @@ describe('Tactical Match Simulation Engine', () => {
     const lossUserBallsSum = chaseLoss.userScorecard!.reduce((sum, p) => sum + (p.ballsFaced ?? 0), 0);
     expect(lossUserBatSum).toBe(chaseLoss.userScore.runs);
     expect(lossUserBallsSum).toBeLessThanOrEqual(120);
+
+    const oversToBalls = (overs: number) =>
+      Math.floor(overs) * 6 + Math.round((overs - Math.floor(overs)) * 10);
+
+    // Early chase win: opponent bowling overs and runsConceded match user's chasing innings
+    const chaseWinOppBowlBalls = chaseWin.opponentBowling!.reduce(
+      (sum, b) => sum + oversToBalls(b.oversBowled ?? 0),
+      0
+    );
+    const chaseWinOppBowlRuns = chaseWin.opponentBowling!.reduce(
+      (sum, b) => sum + (b.runsConceded ?? 0),
+      0
+    );
+    expect(chaseWinOppBowlBalls).toBe(oversToBalls(chaseWin.userScore.overs));
+    expect(chaseWinOppBowlBalls).toBeLessThan(120);
+    expect(chaseWinOppBowlRuns).toBe(chaseWin.userScore.runs);
+    for (const b of chaseWin.opponentBowling!) {
+      expect(oversToBalls(b.oversBowled ?? 0)).toBeLessThanOrEqual(24);
+    }
+
+    const chaseWinUserBowlBalls = chaseWin.userBowling!.reduce(
+      (sum, b) => sum + oversToBalls(b.oversBowled ?? 0),
+      0
+    );
+    const chaseWinUserBowlRuns = chaseWin.userBowling!.reduce(
+      (sum, b) => sum + (b.runsConceded ?? 0),
+      0
+    );
+    expect(chaseWinUserBowlBalls).toBe(oversToBalls(chaseWin.opponentScore.overs));
+    expect(chaseWinUserBowlRuns).toBe(chaseWin.opponentScore.runs);
+
+    // Full 20-over chase loss: both bowling cards sum to 120 balls and exact innings totals
+    expect(
+      chaseLoss.opponentBowling!.reduce((sum, b) => sum + oversToBalls(b.oversBowled ?? 0), 0)
+    ).toBe(oversToBalls(chaseLoss.userScore.overs));
+    expect(
+      chaseLoss.opponentBowling!.reduce((sum, b) => sum + (b.runsConceded ?? 0), 0)
+    ).toBe(chaseLoss.userScore.runs);
+    expect(
+      chaseLoss.userBowling!.reduce((sum, b) => sum + oversToBalls(b.oversBowled ?? 0), 0)
+    ).toBe(oversToBalls(chaseLoss.opponentScore.overs));
+    expect(
+      chaseLoss.userBowling!.reduce((sum, b) => sum + (b.runsConceded ?? 0), 0)
+    ).toBe(chaseLoss.opponentScore.runs);
+
+    // Opponent early chase win (user batted first and lost): user bowling overs match opponent overs
+    const defendLoss = simulateMatch(sampleUserXI, opp, chepauk, sampleUserXI[0].id, () => 0.99, true);
+    expect(defendLoss.won).toBe(false);
+    expect(defendLoss.opponentScore.overs).toBeLessThan(20);
+    expect(
+      defendLoss.userBowling!.reduce((sum, b) => sum + oversToBalls(b.oversBowled ?? 0), 0)
+    ).toBe(oversToBalls(defendLoss.opponentScore.overs));
+    expect(
+      defendLoss.userBowling!.reduce((sum, b) => sum + (b.runsConceded ?? 0), 0)
+    ).toBe(defendLoss.opponentScore.runs);
+    expect(
+      defendLoss.opponentBowling!.reduce((sum, b) => sum + (b.runsConceded ?? 0), 0)
+    ).toBe(defendLoss.userScore.runs);
   });
 });

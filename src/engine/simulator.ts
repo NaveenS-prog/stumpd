@@ -232,17 +232,68 @@ function distributeBattingRuns(
   return result;
 }
 
+function ballsToOvers(balls: number): number {
+  const clamped = Math.max(0, balls);
+  return Math.floor(clamped / 6) + (clamped % 6) / 10;
+}
+
+function distributeBowlingBalls(bowlerCount: number, totalBalls: number): number[] {
+  if (bowlerCount <= 0) return [];
+  const ballsPerBowler = new Array<number>(bowlerCount).fill(0);
+  const cappedBalls = Math.max(0, Math.min(totalBalls, bowlerCount * 24));
+  let remainingCompleteOvers = Math.floor(cappedBalls / 6);
+  const partialBalls = cappedBalls % 6;
+
+  const baseOvers = Math.min(4, Math.floor(remainingCompleteOvers / bowlerCount));
+  for (let i = 0; i < bowlerCount; i++) {
+    ballsPerBowler[i] = baseOvers * 6;
+    remainingCompleteOvers -= baseOvers;
+  }
+  for (let i = 0; i < bowlerCount && remainingCompleteOvers > 0; i++) {
+    const capacityOvers = 4 - ballsPerBowler[i] / 6;
+    const addOvers = Math.min(capacityOvers, remainingCompleteOvers);
+    ballsPerBowler[i] += addOvers * 6;
+    remainingCompleteOvers -= addOvers;
+  }
+
+  if (partialBalls > 0) {
+    let assignedPartial = false;
+    for (let i = bowlerCount - 1; i >= 0; i--) {
+      if (ballsPerBowler[i] <= 24 - partialBalls) {
+        ballsPerBowler[i] += partialBalls;
+        assignedPartial = true;
+        break;
+      }
+    }
+    if (!assignedPartial) {
+      let remaining = partialBalls;
+      for (let i = bowlerCount - 1; i >= 0 && remaining > 0; i--) {
+        const room = 24 - ballsPerBowler[i];
+        const add = Math.min(room, remaining);
+        ballsPerBowler[i] += add;
+        remaining -= add;
+      }
+    }
+  }
+
+  return ballsPerBowler;
+}
+
 function distributeBowlingWickets(
   bowlers: Player[],
   adjustedBowling: Record<string, number>,
   wicketsToTake: number,
   totalRunsConceded: number,
-  rng: () => number
+  rng: () => number,
+  totalBalls: number = 120
 ): PlayerPerformance[] {
   const result: PlayerPerformance[] = [];
   const topBowlers = [...bowlers]
     .sort((a, b) => (adjustedBowling[b.id] ?? b.bowlingRating) - (adjustedBowling[a.id] ?? a.bowlingRating))
     .slice(0, 5);
+  if (topBowlers.length === 0) return result;
+
+  const ballsPerBowler = distributeBowlingBalls(topBowlers.length, totalBalls);
 
   const weights = topBowlers.map((b) => {
     const rating = adjustedBowling[b.id] ?? b.bowlingRating;
@@ -255,24 +306,26 @@ function distributeBowlingWickets(
 
   topBowlers.forEach((b, idx) => {
     const isLast = idx === topBowlers.length - 1;
-    const proportion = weights[idx] / sumWeights;
+    const proportion = sumWeights > 0 ? weights[idx] / sumWeights : 1 / topBowlers.length;
 
-    let wkts = isLast ? Math.max(0, wicketsToTake - wktsAssigned) : Math.round(wicketsToTake * proportion);
-    if (wkts + wktsAssigned > wicketsToTake) {
-      wkts = Math.max(0, wicketsToTake - wktsAssigned);
-    }
+    const remainingWkts = Math.max(0, wicketsToTake - wktsAssigned);
+    const wkts = isLast
+      ? remainingWkts
+      : Math.min(remainingWkts, Math.round(wicketsToTake * proportion));
     wktsAssigned += wkts;
 
-    const runsForBowler = isLast
-      ? Math.max(10, totalRunsConceded - runsAssigned)
-      : Math.round(totalRunsConceded * (0.16 + rng() * 0.08));
+    const bowlerBalls = ballsPerBowler[idx];
+    const ballShare = totalBalls > 0 ? bowlerBalls / totalBalls : 1 / topBowlers.length;
+    const remainingRuns = Math.max(0, totalRunsConceded - runsAssigned);
+    const rawRuns = Math.round(totalRunsConceded * ballShare * (0.8 + rng() * 0.4));
+    const runsForBowler = isLast ? remainingRuns : Math.min(remainingRuns, rawRuns);
     runsAssigned += runsForBowler;
 
     result.push({
       playerId: b.id,
       playerName: b.name,
       wicketsTaken: wkts,
-      oversBowled: 4,
+      oversBowled: ballsToOvers(bowlerBalls),
       runsConceded: runsForBowler,
     });
   });
@@ -281,8 +334,7 @@ function distributeBowlingWickets(
 }
 
 function ballsLeftToOvers(ballsLeft: number): number {
-  const ballsBowled = Math.max(1, Math.min(120, 120 - ballsLeft));
-  return Math.floor(ballsBowled / 6) + (ballsBowled % 6) / 10;
+  return ballsToOvers(Math.max(1, Math.min(120, 120 - ballsLeft)));
 }
 
 function combineTeamPerformances(
@@ -408,7 +460,8 @@ export function simulateMatch(
     userAdjusted.bowlingRatings,
     oppWickets,
     oppRuns,
-    rng
+    rng,
+    oppMaxBalls
   );
 
   const oppBatting = distributeBattingRuns(
@@ -424,7 +477,8 @@ export function simulateMatch(
     oppAdjusted.bowlingRatings,
     userWickets,
     userRuns,
-    rng
+    rng,
+    userMaxBalls
   );
 
   // Combine player performances to identify Top Performers & Player of the Match

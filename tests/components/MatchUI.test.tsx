@@ -210,5 +210,38 @@ describe('Match UI Components', () => {
     expect(screen.getByText(opponent.players[0].name)).toBeDefined();
     expect(screen.getByText(opponent.players[10].name)).toBeDefined();
     expect(screen.getByText(sampleUserXI[1].name)).toBeDefined();
+    expect(screen.getByText('3/24 (4 ov)')).toBeDefined();
+    expect(screen.getByText('2/31 (4 ov)')).toBeDefined();
+  });
+
+  it('renders partial chasing overs in BoxScoreCard bowling figures when chase finishes early', () => {
+    const chasingResult: MatchResult = {
+      ...sampleResult,
+      userBatsFirst: false,
+      userScore: { runs: 175, wickets: 3, overs: 18.2 },
+      opponentScore: { runs: 172, wickets: 7, overs: 20 },
+      margin: 'Won by 7 wickets (10b left)',
+      opponentBowling: [
+        {
+          playerId: opponent.players[10].id,
+          playerName: opponent.players[10].name,
+          wicketsTaken: 2,
+          oversBowled: 3.2,
+          runsConceded: 31,
+        },
+      ],
+    };
+
+    render(
+      <BoxScoreCard
+        result={chasingResult}
+        userTeamName="User XI"
+        opponentName={opponent.name}
+      />
+    );
+
+    expect(screen.getByText('(18.2 Overs)')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: /view detailed scorecard/i }));
+    expect(screen.getByText('2/31 (3.2 ov)')).toBeDefined();
   });
 });

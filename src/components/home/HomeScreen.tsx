@@ -152,7 +152,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               </span>
             </div>
             <p className="text-xs text-turf-300 truncate">
-              Global synchronized daily seed. Zero mulligans. One shot.
+              Global synchronized daily seed. Zero redrafts. One shot.
             </p>
           </div>
           <button
@@ -176,7 +176,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               </span>
             </div>
             <p className="text-xs text-turf-300 truncate">
-              Unlimited mulligans. Experiment with team balance synergies.
+              Unlimited redrafts. Experiment with team balance synergies.
             </p>
           </div>
           <button

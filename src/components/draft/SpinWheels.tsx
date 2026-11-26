@@ -107,7 +107,7 @@ export const SpinWheels: React.FC<SpinWheelsProps> = ({
             disabled={isSpinning || mulligansRemaining <= 0 || disableMulligan}
             className="flex-1 py-3 px-4 rounded-xl bg-[#0A1813] hover:bg-[#152e24] disabled:opacity-40 disabled:cursor-not-allowed border border-gold-400/40 text-gold-400 font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2"
           >
-            <span>🔄 Mulligan Reel</span>
+            <span>🔄 Redraft</span>
             <span className="px-1.5 py-0.5 rounded bg-turf-900 text-gold-300 font-mono text-[11px] border border-gold-400/20">
               {mulligansRemaining} left
             </span>

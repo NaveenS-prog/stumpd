@@ -64,8 +64,8 @@ describe('Draft UI Components', () => {
     expect(screen.getByText('India')).toBeDefined();
     expect(screen.getByText('2000s')).toBeDefined();
 
-    const mulliganBtn = screen.getByRole('button', { name: /mulligan/i });
-    fireEvent.click(mulliganBtn);
+    const redraftBtn = screen.getByRole('button', { name: /redraft/i });
+    fireEvent.click(redraftBtn);
     expect(onMulligan).toHaveBeenCalledTimes(1);
   });
 

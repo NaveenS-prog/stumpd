@@ -7,26 +7,42 @@ import {
   PlayerPerformance,
 } from '../types/tournament';
 import { getActiveSynergies } from '../data/synergies';
+import { VENUES } from '../data/venues';
 
 export function isSpinner(player: Player): boolean {
   if (player.primaryRole === 'Spinner') return true;
+  if (player.bowlingRating < 60) return false;
   const bType = player.bowlingType || '';
   return (
     bType.includes('Spin') ||
     bType.includes('Break') ||
     bType.includes('Orthodox') ||
+    bType.includes('Unorthodox') ||
     bType.includes('Chinaman')
   );
 }
 
 export function isPacer(player: Player): boolean {
   if (player.primaryRole === 'Pacer') return true;
+  if (player.bowlingRating < 60) return false;
   const bType = player.bowlingType || '';
   return (
     bType.includes('Fast') ||
     bType.includes('Medium') ||
     bType.includes('Seam')
   );
+}
+
+export function getMatchOpponentAndVenue(
+  matchIndex: number,
+  opponents: OpponentTeam[]
+): { opponent: OpponentTeam; venue: Venue } {
+  const opponent = opponents[matchIndex] || opponents[0];
+  const venue =
+    VENUES.find((v) => v.id === opponent?.venueId) ||
+    VENUES[Math.abs(matchIndex) % VENUES.length] ||
+    VENUES[0];
+  return { opponent, venue };
 }
 
 export function calculatePitchAdjustedRatings(
@@ -57,7 +73,7 @@ export function calculatePitchAdjustedRatings(
       adjBowl = adjBowl * (1 + generalBowlingBoost);
     }
 
-    if (captainId && player.id === captainId) {
+    if (captainId && (player.id === captainId || player.name === captainId)) {
       adjBat *= 1.1;
       adjBowl *= 1.1;
     }
@@ -153,11 +169,13 @@ function distributeBattingRuns(
   adjustedBatting: Record<string, number>,
   totalRuns: number,
   wicketsLost: number,
-  rng: () => number
+  rng: () => number,
+  maxBalls: number = 120
 ): PlayerPerformance[] {
   const result: PlayerPerformance[] = [];
   const activeBatsmenCount = Math.min(batsmen.length, Math.max(5, wicketsLost + 2));
   const activeBatsmen = batsmen.slice(0, activeBatsmenCount);
+  if (activeBatsmen.length === 0) return result;
 
   // Compute relative weights
   const weights = activeBatsmen.map((b, idx) => {
@@ -171,9 +189,12 @@ function distributeBattingRuns(
   let runsAssigned = 0;
 
   activeBatsmen.forEach((b, idx) => {
-    const proportion = weights[idx] / sumWeights;
+    const proportion = sumWeights > 0 ? weights[idx] / sumWeights : 1 / activeBatsmen.length;
     const isLast = idx === activeBatsmen.length - 1;
-    let runs = isLast ? Math.max(0, totalRuns - runsAssigned) : Math.round(totalRuns * proportion);
+    const remainingRuns = Math.max(0, totalRuns - runsAssigned);
+    const runs = isLast
+      ? remainingRuns
+      : Math.min(remainingRuns, Math.round(totalRuns * proportion));
     runsAssigned += runs;
 
     const sixes = Math.floor(runs / (14 + Math.floor(rng() * 10)));
@@ -190,6 +211,23 @@ function distributeBattingRuns(
       sixes,
     });
   });
+
+  const totalBalls = result.reduce((acc, entry) => acc + (entry.ballsFaced ?? 0), 0);
+  if (totalBalls > maxBalls) {
+    const scale = maxBalls / totalBalls;
+    for (const entry of result) {
+      entry.ballsFaced = Math.max(1, Math.round((entry.ballsFaced ?? 1) * scale));
+    }
+    let adjustedBalls = result.reduce((acc, entry) => acc + (entry.ballsFaced ?? 0), 0);
+    while (adjustedBalls > maxBalls) {
+      const topEntry = result.reduce((best, curr) =>
+        (curr.ballsFaced ?? 0) > (best.ballsFaced ?? 0) ? curr : best
+      );
+      if ((topEntry.ballsFaced ?? 0) <= 1) break;
+      topEntry.ballsFaced = (topEntry.ballsFaced ?? 1) - 1;
+      adjustedBalls--;
+    }
+  }
 
   return result;
 }
@@ -242,15 +280,51 @@ function distributeBowlingWickets(
   return result;
 }
 
+function ballsLeftToOvers(ballsLeft: number): number {
+  const ballsBowled = Math.max(1, Math.min(120, 120 - ballsLeft));
+  return Math.floor(ballsBowled / 6) + (ballsBowled % 6) / 10;
+}
+
+function combineTeamPerformances(
+  batting: PlayerPerformance[],
+  bowling: PlayerPerformance[],
+  captainIdentifier?: string
+): PlayerPerformance[] {
+  return batting.map((bat) => {
+    const bowl = bowling.find((b) => b.playerId === bat.playerId);
+    return {
+      playerId: bat.playerId,
+      playerName: bat.playerName,
+      runsScored: bat.runsScored,
+      ballsFaced: bat.ballsFaced,
+      fours: bat.fours,
+      sixes: bat.sixes,
+      wicketsTaken: bowl?.wicketsTaken ?? 0,
+      oversBowled: bowl?.oversBowled ?? 0,
+      runsConceded: bowl?.runsConceded ?? 0,
+      isCaptain:
+        Boolean(captainIdentifier) &&
+        (bat.playerId === captainIdentifier || bat.playerName === captainIdentifier),
+    };
+  });
+}
+
 export function simulateMatch(
   userXI: Player[],
   opponent: OpponentTeam,
   venue: Venue,
   captainId?: string,
-  rng: () => number = Math.random
+  rng: () => number = Math.random,
+  userBatsFirst?: boolean
 ): MatchResult {
-  const userAdjusted = calculatePitchAdjustedRatings(userXI, venue, captainId);
-  const oppAdjusted = calculatePitchAdjustedRatings(opponent.players, venue, opponent.captain);
+  const batsFirst = userBatsFirst ?? rng() < 0.5;
+  const userAdjusted = calculatePitchAdjustedRatings(userXI, venue, captainId, !batsFirst);
+  const oppAdjusted = calculatePitchAdjustedRatings(
+    opponent.players,
+    venue,
+    opponent.captain,
+    batsFirst
+  );
 
   const userTPS = calculateTeamPerformanceScore(userXI, userAdjusted);
   const oppTPS = calculateTeamPerformanceScore(opponent.players, oppAdjusted);
@@ -268,92 +342,96 @@ export function simulateMatch(
   let oppRuns: number;
   let userWickets: number;
   let oppWickets: number;
+  let userOvers = 20.0;
+  let oppOvers = 20.0;
+  let userMaxBalls = 120;
+  let oppMaxBalls = 120;
   let margin: string;
 
-  if (won) {
+  if (won && batsFirst) {
+    // User batted first and defended total
     userRuns = Math.round(basePar + (userTPS - oppTPS) * 0.15 + (rng() * 24 - 10));
     userRuns = Math.max(120, userRuns);
-
-    const winByRuns = rng() > 0.45;
-    if (winByRuns) {
-      const runDiff = Math.floor(rng() * 28) + 4;
-      oppRuns = Math.max(100, userRuns - runDiff);
-      userWickets = Math.min(9, Math.floor(rng() * 6) + 2);
-      oppWickets = Math.min(10, Math.floor(rng() * 5) + 6);
-      margin = `Won by ${runDiff} runs`;
-    } else {
-      oppRuns = Math.round(basePar + (rng() * 20 - 15));
-      oppRuns = Math.max(100, oppRuns);
-      userRuns = oppRuns + Math.floor(rng() * 4) + 1;
-      userWickets = Math.min(8, Math.floor(rng() * 5) + 2);
-      oppWickets = Math.min(9, Math.floor(rng() * 4) + 4);
-      const wktsLeft = 10 - userWickets;
-      const ballsLeft = Math.floor(rng() * 10) + 1;
-      margin = `Won by ${wktsLeft} wicket${wktsLeft > 1 ? 's' : ''} (${ballsLeft}b left)`;
-    }
+    const runDiff = Math.floor(rng() * 28) + 4;
+    oppRuns = Math.max(100, userRuns - runDiff);
+    const actualDiff = userRuns - oppRuns;
+    userWickets = Math.min(9, Math.floor(rng() * 6) + 2);
+    oppWickets = Math.min(10, Math.floor(rng() * 5) + 6);
+    margin = `Won by ${actualDiff} run${actualDiff > 1 ? 's' : ''}`;
+  } else if (won && !batsFirst) {
+    // User chased target and won
+    oppRuns = Math.round(basePar + (rng() * 20 - 15));
+    oppRuns = Math.max(100, oppRuns);
+    userRuns = oppRuns + Math.floor(rng() * 4) + 1;
+    userWickets = Math.min(8, Math.floor(rng() * 5) + 2);
+    oppWickets = Math.min(9, Math.floor(rng() * 4) + 4);
+    const wktsLeft = 10 - userWickets;
+    const ballsLeft = Math.floor(rng() * 10) + 1;
+    userMaxBalls = 120 - ballsLeft;
+    userOvers = ballsLeftToOvers(ballsLeft);
+    margin = `Won by ${wktsLeft} wicket${wktsLeft > 1 ? 's' : ''} (${ballsLeft}b left)`;
+  } else if (!won && batsFirst) {
+    // User batted first and opponent chased down target
+    userRuns = Math.round(basePar + (rng() * 20 - 15));
+    userRuns = Math.max(100, userRuns);
+    oppRuns = userRuns + Math.floor(rng() * 4) + 1;
+    oppWickets = Math.min(8, Math.floor(rng() * 5) + 2);
+    userWickets = Math.min(9, Math.floor(rng() * 4) + 4);
+    const wktsLeft = 10 - oppWickets;
+    const ballsLeft = Math.floor(rng() * 10) + 1;
+    oppMaxBalls = 120 - ballsLeft;
+    oppOvers = ballsLeftToOvers(ballsLeft);
+    margin = `Lost by ${wktsLeft} wicket${wktsLeft > 1 ? 's' : ''} (${ballsLeft}b left)`;
   } else {
+    // User chased target and fell short
     oppRuns = Math.round(basePar + (oppTPS - userTPS) * 0.15 + (rng() * 24 - 10));
     oppRuns = Math.max(125, oppRuns);
-
-    const lostByRuns = rng() > 0.45;
-    if (lostByRuns) {
-      const runDiff = Math.floor(rng() * 28) + 4;
-      userRuns = Math.max(100, oppRuns - runDiff);
-      oppWickets = Math.min(9, Math.floor(rng() * 6) + 2);
-      userWickets = Math.min(10, Math.floor(rng() * 5) + 6);
-      margin = `Lost by ${runDiff} runs`;
-    } else {
-      userRuns = Math.round(basePar + (rng() * 20 - 15));
-      userRuns = Math.max(100, userRuns);
-      oppRuns = userRuns + Math.floor(rng() * 4) + 1;
-      oppWickets = Math.min(8, Math.floor(rng() * 5) + 2);
-      userWickets = Math.min(9, Math.floor(rng() * 4) + 4);
-      const wktsLeft = 10 - oppWickets;
-      margin = `Lost by ${wktsLeft} wicket${wktsLeft > 1 ? 's' : ''}`;
-    }
+    const runDiff = Math.floor(rng() * 28) + 4;
+    userRuns = Math.max(100, oppRuns - runDiff);
+    const actualDiff = oppRuns - userRuns;
+    oppWickets = Math.min(9, Math.floor(rng() * 6) + 2);
+    userWickets = Math.min(10, Math.floor(rng() * 5) + 6);
+    margin = `Lost by ${actualDiff} run${actualDiff > 1 ? 's' : ''}`;
   }
 
   // Generate Scorecards
-  const userBatting = distributeBattingRuns(userXI, userAdjusted.battingRatings, userRuns, userWickets, rng);
-  const userBowling = distributeBowlingWickets(userXI, userAdjusted.bowlingRatings, oppWickets, oppRuns, rng);
+  const userBatting = distributeBattingRuns(
+    userXI,
+    userAdjusted.battingRatings,
+    userRuns,
+    userWickets,
+    rng,
+    userMaxBalls
+  );
+  const userBowling = distributeBowlingWickets(
+    userXI,
+    userAdjusted.bowlingRatings,
+    oppWickets,
+    oppRuns,
+    rng
+  );
 
-  const oppBatting = distributeBattingRuns(opponent.players, oppAdjusted.battingRatings, oppRuns, oppWickets, rng);
-  const oppBowling = distributeBowlingWickets(opponent.players, oppAdjusted.bowlingRatings, userWickets, userRuns, rng);
+  const oppBatting = distributeBattingRuns(
+    opponent.players,
+    oppAdjusted.battingRatings,
+    oppRuns,
+    oppWickets,
+    rng,
+    oppMaxBalls
+  );
+  const oppBowling = distributeBowlingWickets(
+    opponent.players,
+    oppAdjusted.bowlingRatings,
+    userWickets,
+    userRuns,
+    rng
+  );
 
   // Combine player performances to identify Top Performers & Player of the Match
-  const allPerformances: PlayerPerformance[] = [];
-
-  userBatting.forEach((ub) => {
-    const bowl = userBowling.find((b) => b.playerId === ub.playerId);
-    allPerformances.push({
-      playerId: ub.playerId,
-      playerName: ub.playerName,
-      runsScored: ub.runsScored,
-      ballsFaced: ub.ballsFaced,
-      fours: ub.fours,
-      sixes: ub.sixes,
-      wicketsTaken: bowl?.wicketsTaken ?? 0,
-      oversBowled: bowl?.oversBowled ?? 0,
-      runsConceded: bowl?.runsConceded ?? 0,
-      isCaptain: ub.playerId === captainId,
-    });
-  });
-
-  oppBatting.forEach((ob) => {
-    const bowl = oppBowling.find((b) => b.playerId === ob.playerId);
-    allPerformances.push({
-      playerId: ob.playerId,
-      playerName: ob.playerName,
-      runsScored: ob.runsScored,
-      ballsFaced: ob.ballsFaced,
-      fours: ob.fours,
-      sixes: ob.sixes,
-      wicketsTaken: bowl?.wicketsTaken ?? 0,
-      oversBowled: bowl?.oversBowled ?? 0,
-      runsConceded: bowl?.runsConceded ?? 0,
-      isCaptain: ob.playerId === opponent.captain,
-    });
-  });
+  const allPerformances: PlayerPerformance[] = [
+    ...combineTeamPerformances(userBatting, userBowling, captainId),
+    ...combineTeamPerformances(oppBatting, oppBowling, opponent.captain),
+  ];
 
   // Calculate Fantasy Impact: runs + 25 * wickets
   const rankedPerformances = [...allPerformances].sort((a, b) => {
@@ -376,18 +454,21 @@ export function simulateMatch(
     userScore: {
       runs: userRuns,
       wickets: userWickets,
-      overs: 20.0,
+      overs: userOvers,
     },
     opponentScore: {
       runs: oppRuns,
       wickets: oppWickets,
-      overs: 20.0,
+      overs: oppOvers,
     },
     margin,
     playerOfTheMatch: potm,
     topPerformers,
     userScorecard: userBatting,
     opponentScorecard: oppBatting,
+    userBowling,
+    opponentBowling: oppBowling,
+    userBatsFirst: batsFirst,
     activeSynergyNames,
     activeTraitHighlights,
   };

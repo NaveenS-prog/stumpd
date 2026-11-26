@@ -12,6 +12,7 @@ import { ResultsScreen } from './components/results/ResultsScreen';
 import { UniversalScoreboardModal } from './components/scoreboard/UniversalScoreboardModal';
 import { SLOTS } from './data/slots';
 import { VENUES } from './data/venues';
+import { getMatchOpponentAndVenue } from './engine/simulator';
 import { initAudioUnlock } from './utils/sound';
 import { trackEvent } from './utils/analytics';
 
@@ -37,6 +38,7 @@ export default function App() {
     matchResults,
     lastResult,
     isSimulating,
+    tossOutcome,
     stats,
     isDailyLocked,
     isMuted,
@@ -48,6 +50,7 @@ export default function App() {
     reorderLineup,
     proceedToMatches,
     playCurrentMatch,
+    skipSimulation,
     nextMatch,
     resetGame,
     toggleMute,
@@ -61,14 +64,10 @@ export default function App() {
     initAudioUnlock();
   }, []);
 
-  const currentOpponent =
-    currentMatchIndex === 0 && selectedOpponent
-      ? selectedOpponent
-      : activeOpponents[currentMatchIndex] || activeOpponents[0];
-  const currentVenue =
-    currentMatchIndex === 0 && selectedVenue
-      ? selectedVenue
-      : VENUES[currentMatchIndex % VENUES.length];
+  const { opponent: currentOpponent, venue: currentVenue } = getMatchOpponentAndVenue(
+    currentMatchIndex,
+    activeOpponents
+  );
 
   const getModeTitle = () => {
     switch (gameMode) {
@@ -189,10 +188,10 @@ export default function App() {
                       mulligansRemaining={mulligansRemaining}
                       gameMode={gameMode}
                       fixtureInfo={{
-                        opponentName: selectedOpponent.name,
-                        venueName: selectedVenue.name,
-                        pitchType: selectedVenue.pitchType,
-                        pitchDescription: selectedVenue.pitchDescription,
+                        opponentName: currentOpponent.name,
+                        venueName: currentVenue.name,
+                        pitchType: currentVenue.pitchType,
+                        pitchDescription: currentVenue.pitchDescription,
                       }}
                       onSpin={spinReels}
                       onMulligan={mulligan}
@@ -271,8 +270,10 @@ export default function App() {
             captainId={captainId}
             lastResult={lastResult}
             isSimulating={isSimulating}
+            tossOutcome={tossOutcome}
             onPlayMatch={playCurrentMatch}
             onNextMatch={nextMatch}
+            onSkipSimulation={skipSimulation}
           />
         )}
 

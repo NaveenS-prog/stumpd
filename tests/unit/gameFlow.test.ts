@@ -190,4 +190,184 @@ describe('Game State Flow Integration', () => {
       vi.useRealTimers();
     }
   });
+
+  it('resolves pending browser simulation on skipSimulation and cancels simTimeoutRef on resetGame', () => {
+    vi.useFakeTimers();
+    vi.stubEnv('NODE_ENV', 'development');
+    vi.stubEnv('VITEST', 'false');
+
+    try {
+      const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
+      const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout');
+      const { result, unmount } = renderHook(() => useStumpdGame());
+
+      act(() => {
+        result.current.startMode('International');
+      });
+      for (const p of (playersData as Player[]).slice(0, 11)) {
+        act(() => {
+          result.current.draftPlayer(p);
+        });
+      }
+      act(() => {
+        result.current.proceedToMatches();
+      });
+
+      // Start match simulation in browser mode: stays simulating for 1800ms
+      const callsBeforeSim = setTimeoutSpy.mock.calls.length;
+      act(() => {
+        result.current.playCurrentMatch();
+      });
+      expect(result.current.isSimulating).toBe(true);
+      expect(result.current.lastResult).toBeNull();
+      expect(result.current.matchResults).toHaveLength(0);
+      const simCallIndex = setTimeoutSpy.mock.calls.findIndex(
+        (call, idx) => idx >= callsBeforeSim && call[1] === 1800
+      );
+      expect(simCallIndex).toBeGreaterThanOrEqual(callsBeforeSim);
+      const simTimerId = setTimeoutSpy.mock.results[simCallIndex]?.value;
+
+      // Skip simulation commits immediately and cancels timer
+      act(() => {
+        result.current.skipSimulation();
+      });
+      expect(result.current.isSimulating).toBe(false);
+      expect(result.current.lastResult).not.toBeNull();
+      expect(result.current.matchResults).toHaveLength(1);
+      expect(clearTimeoutSpy).toHaveBeenCalledWith(simTimerId);
+
+      // Advancing timers after skipSimulation must not duplicate match result
+      act(() => {
+        vi.advanceTimersByTime(5000);
+      });
+      expect(result.current.matchResults).toHaveLength(1);
+
+      // Start a new campaign simulation and resetGame mid-simulation
+      act(() => {
+        result.current.startMode('International');
+      });
+      for (const p of (playersData as Player[]).slice(0, 11)) {
+        act(() => {
+          result.current.draftPlayer(p);
+        });
+      }
+      act(() => {
+        result.current.proceedToMatches();
+      });
+      const callsBeforeResetSim = setTimeoutSpy.mock.calls.length;
+      act(() => {
+        result.current.playCurrentMatch();
+      });
+      expect(result.current.isSimulating).toBe(true);
+      const resetSimCallIndex = setTimeoutSpy.mock.calls.findIndex(
+        (call, idx) => idx >= callsBeforeResetSim && call[1] === 1800
+      );
+      expect(resetSimCallIndex).toBeGreaterThanOrEqual(callsBeforeResetSim);
+      const resetSimTimerId = setTimeoutSpy.mock.results[resetSimCallIndex]?.value;
+
+      // resetGame cancels pending simTimeoutRef so stale result never commits
+      act(() => {
+        result.current.resetGame();
+      });
+      expect(result.current.screen).toBe('home');
+      expect(result.current.isSimulating).toBe(false);
+      expect(result.current.lastResult).toBeNull();
+      expect(result.current.matchResults).toHaveLength(0);
+      expect(clearTimeoutSpy).toHaveBeenCalledWith(resetSimTimerId);
+
+      act(() => {
+        vi.advanceTimersByTime(5000);
+      });
+      expect(result.current.lastResult).toBeNull();
+      expect(result.current.matchResults).toHaveLength(0);
+
+      // Also verify natural 1800ms completion in browser mode
+      act(() => {
+        result.current.startMode('International');
+      });
+      for (const p of (playersData as Player[]).slice(0, 11)) {
+        act(() => {
+          result.current.draftPlayer(p);
+        });
+      }
+      act(() => {
+        result.current.proceedToMatches();
+      });
+      act(() => {
+        result.current.playCurrentMatch();
+      });
+      expect(result.current.isSimulating).toBe(true);
+      act(() => {
+        vi.advanceTimersByTime(1799);
+      });
+      expect(result.current.isSimulating).toBe(true);
+      expect(result.current.lastResult).toBeNull();
+      act(() => {
+        vi.advanceTimersByTime(1);
+      });
+      expect(result.current.isSimulating).toBe(false);
+      expect(result.current.lastResult).not.toBeNull();
+      expect(result.current.lastResult?.userBatsFirst).toBe(result.current.tossOutcome.userBatsFirst);
+
+      // Also verify unmount clears pending simTimeoutRef
+      act(() => {
+        result.current.startMode('International');
+      });
+      for (const p of (playersData as Player[]).slice(0, 11)) {
+        act(() => {
+          result.current.draftPlayer(p);
+        });
+      }
+      act(() => {
+        result.current.proceedToMatches();
+      });
+      act(() => {
+        result.current.playCurrentMatch();
+      });
+      const clearsBeforeUnmount = clearTimeoutSpy.mock.calls.length;
+      unmount();
+      expect(clearTimeoutSpy.mock.calls.length).toBeGreaterThan(clearsBeforeUnmount);
+    } finally {
+      vi.restoreAllMocks();
+      vi.unstubAllEnvs();
+      vi.useRealTimers();
+    }
+  });
+
+  it('keeps Daily Stumpd tossOutcome and match result deterministic across runs', () => {
+    const runDailyOnce = () => {
+      localStorage.clear();
+      const { result, unmount } = renderHook(() => useStumpdGame());
+      act(() => {
+        result.current.startMode('daily');
+      });
+      for (const p of (playersData as Player[]).slice(0, 11)) {
+        act(() => {
+          result.current.draftPlayer(p);
+        });
+      }
+      act(() => {
+        result.current.proceedToMatches();
+      });
+      const toss = result.current.tossOutcome;
+      act(() => {
+        result.current.playCurrentMatch();
+      });
+      const match = result.current.lastResult!;
+      unmount();
+      return { toss, match };
+    };
+
+    const run1 = runDailyOnce();
+    const run2 = runDailyOnce();
+
+    expect(run1.toss).toBeDefined();
+    expect(typeof run1.toss.userBatsFirst).toBe('boolean');
+    expect(run1.match.userBatsFirst).toBe(run1.toss.userBatsFirst);
+    expect(run1.toss).toEqual(run2.toss);
+    expect(run1.match.won).toBe(run2.match.won);
+    expect(run1.match.userScore).toEqual(run2.match.userScore);
+    expect(run1.match.opponentScore).toEqual(run2.match.opponentScore);
+    expect(run1.match.margin).toBe(run2.match.margin);
+  });
 });

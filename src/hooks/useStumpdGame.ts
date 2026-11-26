@@ -6,7 +6,7 @@ import { SLOTS } from '../data/slots';
 import { INTERNATIONAL_OPPONENTS, IPL_OPPONENTS } from '../data/opponents';
 import { VENUES } from '../data/venues';
 import { draftMachine } from '../engine/draftMachine';
-import { simulateMatch } from '../engine/simulator';
+import { simulateMatch, getMatchOpponentAndVenue } from '../engine/simulator';
 import { getDailySeed, createSeededRandom } from '../engine/dailySeed';
 import {
   getGameStats,
@@ -23,6 +23,27 @@ import {
   INTERNATIONAL_ERAS,
   IPL_ERAS,
 } from '../data/teams';
+
+export interface TossOutcome {
+  winner: string;
+  decision: 'bat' | 'bowl';
+  userBatsFirst: boolean;
+}
+
+const DEFAULT_TOSS_OUTCOME: TossOutcome = {
+  winner: 'User XI',
+  decision: 'bat',
+  userBatsFirst: true,
+};
+
+function rollTossOutcome(opponentName: string, rng: () => number): TossOutcome {
+  const userBatsFirst = rng() < 0.5;
+  const userWonToss = rng() < 0.5;
+  const winner = userWonToss ? 'User XI' : opponentName;
+  const decision: 'bat' | 'bowl' =
+    (userWonToss && userBatsFirst) || (!userWonToss && !userBatsFirst) ? 'bat' : 'bowl';
+  return { winner, decision, userBatsFirst };
+}
 
 export function useStumpdGame() {
   const [screen, setScreen] = useState<GamePhase>('home');
@@ -41,6 +62,7 @@ export function useStumpdGame() {
   const [matchResults, setMatchResults] = useState<MatchResult[]>([]);
   const [lastResult, setLastResult] = useState<MatchResult | null>(null);
   const [isSimulating, setIsSimulating] = useState<boolean>(false);
+  const [tossOutcomes, setTossOutcomes] = useState<Record<number, TossOutcome>>({});
 
   const [stats, setStats] = useState<StoredGameStats>(() => getGameStats());
   const [isDailyLocked, setIsDailyLocked] = useState<boolean>(() => isDailyCompletedToday());
@@ -48,6 +70,9 @@ export function useStumpdGame() {
 
   const dailyRngRef = useRef<(() => number) | null>(null);
   const spinIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const simTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingSimRef = useRef<(() => void) | null>(null);
+  const tossOutcomesRef = useRef<Record<number, TossOutcome>>({});
 
   const clearSpinInterval = useCallback(() => {
     if (spinIntervalRef.current !== null) {
@@ -56,11 +81,20 @@ export function useStumpdGame() {
     }
   }, []);
 
+  const clearSimTimeout = useCallback(() => {
+    if (simTimeoutRef.current !== null) {
+      clearTimeout(simTimeoutRef.current);
+      simTimeoutRef.current = null;
+    }
+  }, []);
+
   useEffect(() => {
     return () => {
       clearSpinInterval();
+      clearSimTimeout();
+      pendingSimRef.current = null;
     };
-  }, [clearSpinInterval]);
+  }, [clearSimTimeout, clearSpinInterval]);
 
   const activeOpponents: OpponentTeam[] =
     gameMode === 'IPL' ? IPL_OPPONENTS : INTERNATIONAL_OPPONENTS;
@@ -148,6 +182,13 @@ export function useStumpdGame() {
   );
 
   const startMode = useCallback((modeInput: string) => {
+    clearSpinInterval();
+    clearSimTimeout();
+    pendingSimRef.current = null;
+    tossOutcomesRef.current = {};
+    setTossOutcomes({});
+    setIsSimulating(false);
+
     let resolvedMode: GameMode = 'International';
     let mulligans = 3;
     let targetScreen: GamePhase = 'draft';
@@ -183,9 +224,8 @@ export function useStumpdGame() {
     }
 
     const opps = resolvedMode === 'IPL' ? IPL_OPPONENTS : INTERNATIONAL_OPPONENTS;
-    const initialOpp = opps[0];
+    const { opponent: initialOpp, venue: defaultVenue } = getMatchOpponentAndVenue(0, opps);
     setSelectedOpponent(initialOpp);
-    const defaultVenue = VENUES.find((v) => v.id === initialOpp.venueId) || VENUES[0];
     setSelectedVenue(defaultVenue);
 
     setGameMode(resolvedMode);
@@ -205,7 +245,7 @@ export function useStumpdGame() {
     setIsSpinning(false);
 
     trackEvent('round_started', { mode: resolvedMode });
-  }, []);
+  }, [clearSimTimeout, clearSpinInterval]);
 
   const proceedFromSetupToDraft = useCallback(() => {
     setScreen('draft');
@@ -260,42 +300,79 @@ export function useStumpdGame() {
   }, []);
 
   const proceedToMatches = useCallback(() => {
+    const { opponent } = getMatchOpponentAndVenue(0, activeOpponents);
+    const initialToss = rollTossOutcome(opponent.name, getRng());
+    tossOutcomesRef.current = { 0: initialToss };
+    setTossOutcomes({ 0: initialToss });
     setScreen('match');
     setCurrentMatchIndex(0);
     setLastResult(null);
-  }, []);
+  }, [activeOpponents, getRng]);
+
+  const skipSimulation = useCallback(() => {
+    clearSimTimeout();
+    const commit = pendingSimRef.current;
+    if (commit) {
+      pendingSimRef.current = null;
+      commit();
+    }
+  }, [clearSimTimeout]);
 
   const playCurrentMatch = useCallback(() => {
-    setIsSimulating(true);
-    soundEngine.playBatCrack();
+    if (isSimulating || simTimeoutRef.current !== null) return;
+    clearSimTimeout();
 
-    const opponent =
-      currentMatchIndex === 0 && selectedOpponent
-        ? selectedOpponent
-        : activeOpponents[currentMatchIndex] || activeOpponents[0];
-    const venue =
-      currentMatchIndex === 0 && selectedVenue
-        ? selectedVenue
-        : VENUES[currentMatchIndex % VENUES.length];
-    
+    const { opponent, venue } = getMatchOpponentAndVenue(currentMatchIndex, activeOpponents);
+    let activeToss = tossOutcomesRef.current[currentMatchIndex];
+    if (!activeToss) {
+      activeToss = rollTossOutcome(opponent.name, getRng());
+      tossOutcomesRef.current = { ...tossOutcomesRef.current, [currentMatchIndex]: activeToss };
+      setTossOutcomes(tossOutcomesRef.current);
+    }
+
     const isTestEnv =
       typeof process !== 'undefined' &&
       (process.env.NODE_ENV === 'test' || process.env.VITEST === 'true');
     const rng = isTestEnv && !dailyRngRef.current ? () => 0.1 : getRng();
 
-    const result = simulateMatch(picks, opponent, venue, captainId || undefined, rng);
+    const result = simulateMatch(
+      picks,
+      opponent,
+      venue,
+      captainId || undefined,
+      rng,
+      activeToss.userBatsFirst
+    );
 
-    if (result.won) {
-      soundEngine.playVictoryFanfare();
-    } else {
-      soundEngine.playLossSting();
+    const commitSimulation = () => {
+      simTimeoutRef.current = null;
+      pendingSimRef.current = null;
+      if (result.won) {
+        soundEngine.playVictoryFanfare();
+      } else {
+        soundEngine.playLossSting();
+      }
+
+      setLastResult(result);
+      setMatchResults((prev) => [...prev, result]);
+      setIsSimulating(false);
+      trackEvent('match_simulated', { matchIndex: currentMatchIndex, won: result.won });
+    };
+
+    soundEngine.playBatCrack();
+
+    if (isTestEnv) {
+      setIsSimulating(true);
+      commitSimulation();
+      return;
     }
 
-    setLastResult(result);
-    setMatchResults((prev) => [...prev, result]);
-    setIsSimulating(false);
-    trackEvent('match_simulated', { matchIndex: currentMatchIndex, won: result.won });
-  }, [activeOpponents, captainId, currentMatchIndex, getRng, picks, selectedOpponent, selectedVenue]);
+    setIsSimulating(true);
+    pendingSimRef.current = commitSimulation;
+    simTimeoutRef.current = setTimeout(() => {
+      pendingSimRef.current?.();
+    }, 1800);
+  }, [activeOpponents, captainId, clearSimTimeout, currentMatchIndex, getRng, isSimulating, picks]);
 
   const nextMatch = useCallback(() => {
     if (!lastResult) return;
@@ -313,6 +390,10 @@ export function useStumpdGame() {
         setStats(getGameStats());
         setScreen('results');
       } else {
+        const { opponent } = getMatchOpponentAndVenue(nextIdx, activeOpponents);
+        const nextToss = rollTossOutcome(opponent.name, getRng());
+        tossOutcomesRef.current = { ...tossOutcomesRef.current, [nextIdx]: nextToss };
+        setTossOutcomes(tossOutcomesRef.current);
         setCurrentMatchIndex(nextIdx);
         setLastResult(null);
       }
@@ -327,10 +408,15 @@ export function useStumpdGame() {
       setStats(getGameStats());
       setScreen('results');
     }
-  }, [activeOpponents.length, currentMatchIndex, gameMode, lastResult, matchResults]);
+  }, [activeOpponents, currentMatchIndex, gameMode, getRng, lastResult, matchResults]);
 
   const resetGame = useCallback(() => {
     clearSpinInterval();
+    clearSimTimeout();
+    pendingSimRef.current = null;
+    tossOutcomesRef.current = {};
+    setTossOutcomes({});
+    setIsSimulating(false);
     setScreen('home');
     setPicks([]);
     setCaptainId(null);
@@ -344,7 +430,7 @@ export function useStumpdGame() {
     setLastResult(null);
     setStats(getGameStats());
     setIsDailyLocked(isDailyCompletedToday());
-  }, [clearSpinInterval]);
+  }, [clearSimTimeout, clearSpinInterval]);
 
   const toggleMute = useCallback(() => {
     const next = soundEngine.toggleMute();
@@ -352,6 +438,8 @@ export function useStumpdGame() {
     trackEvent('mute_toggled', { isMuted: next });
     return next;
   }, []);
+
+  const tossOutcome = tossOutcomes[currentMatchIndex] ?? DEFAULT_TOSS_OUTCOME;
 
   return {
     screen,
@@ -375,6 +463,7 @@ export function useStumpdGame() {
     matchResults,
     lastResult,
     isSimulating,
+    tossOutcome,
     stats,
     isDailyLocked,
     isMuted,
@@ -386,6 +475,7 @@ export function useStumpdGame() {
     reorderLineup,
     proceedToMatches,
     playCurrentMatch,
+    skipSimulation,
     nextMatch,
     resetGame,
     toggleMute,

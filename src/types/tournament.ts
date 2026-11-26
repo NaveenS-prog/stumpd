@@ -73,6 +73,9 @@ export interface MatchResult {
   topPerformers: PlayerPerformance[];
   userScorecard?: PlayerPerformance[];
   opponentScorecard?: PlayerPerformance[];
+  userBowling?: PlayerPerformance[];
+  opponentBowling?: PlayerPerformance[];
+  userBatsFirst?: boolean;
   activeSynergyNames?: string[];
   activeTraitHighlights?: string[];
 }

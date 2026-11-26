@@ -1,11 +1,61 @@
 import React, { useState } from 'react';
-import { MatchResult } from '../../types/tournament';
+import { MatchResult, PlayerPerformance } from '../../types/tournament';
 
 interface BoxScoreCardProps {
   result: MatchResult;
   userTeamName?: string;
   opponentName: string;
 }
+
+const BattingSection: React.FC<{ title: string; entries?: PlayerPerformance[] }> = ({
+  title,
+  entries,
+}) => {
+  if (!entries || entries.length === 0) return null;
+  return (
+    <div>
+      <h5 className="text-xs font-mono font-bold text-white uppercase mb-2">{title}</h5>
+      <div className="space-y-1">
+        {entries.map((bat) => (
+          <div
+            key={bat.playerId}
+            className="flex items-center justify-between text-xs font-mono py-1 px-2 rounded bg-turf-950/50"
+          >
+            <span className="text-white">{bat.playerName}</span>
+            <span className="text-gold-400 font-bold">
+              {bat.runsScored ?? 0} ({bat.ballsFaced ?? 0}b, {bat.fours ?? 0}x4, {bat.sixes ?? 0}x6)
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const BowlingSection: React.FC<{ title: string; entries?: PlayerPerformance[] }> = ({
+  title,
+  entries,
+}) => {
+  if (!entries || entries.length === 0) return null;
+  return (
+    <div>
+      <h5 className="text-xs font-mono font-bold text-turf-300 uppercase mb-2">{title}</h5>
+      <div className="space-y-1">
+        {entries.map((bowl) => (
+          <div
+            key={bowl.playerId}
+            className="flex items-center justify-between text-xs font-mono py-1 px-2 rounded bg-turf-950/50"
+          >
+            <span className="text-white">{bowl.playerName}</span>
+            <span className="text-emerald-300 font-bold">
+              {bowl.wicketsTaken ?? 0}/{bowl.runsConceded ?? 0} ({bowl.oversBowled ?? 0} ov)
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 export const BoxScoreCard: React.FC<BoxScoreCardProps> = ({
   result,
@@ -124,28 +174,29 @@ export const BoxScoreCard: React.FC<BoxScoreCardProps> = ({
         </button>
       </div>
 
-      {showDetailedScorecard && result.userScorecard && (
-        <div className="mt-4 pt-4 border-t border-turf-800 space-y-4">
-          <div>
-            <h5 className="text-xs font-mono font-bold text-white uppercase mb-2">
-              {userTeamName} Batting
-            </h5>
-            <div className="space-y-1">
-              {result.userScorecard.map((bat) => (
-                <div
-                  key={bat.playerId}
-                  className="flex items-center justify-between text-xs font-mono py-1 px-2 rounded bg-turf-950/50"
-                >
-                  <span className="text-white">{bat.playerName}</span>
-                  <span className="text-gold-400 font-bold">
-                    {bat.runsScored} ({bat.ballsFaced}b, {bat.fours}x4, {bat.sixes}x6)
-                  </span>
-                </div>
-              ))}
-            </div>
+      {showDetailedScorecard &&
+        (result.userScorecard ||
+          result.opponentScorecard ||
+          result.userBowling ||
+          result.opponentBowling) && (
+          <div className="mt-4 pt-4 border-t border-turf-800 space-y-4">
+            {result.userBatsFirst !== false ? (
+              <>
+                <BattingSection title={`${userTeamName} Batting`} entries={result.userScorecard} />
+                <BowlingSection title={`${opponentName} Bowling`} entries={result.opponentBowling} />
+                <BattingSection title={`${opponentName} Batting`} entries={result.opponentScorecard} />
+                <BowlingSection title={`${userTeamName} Bowling`} entries={result.userBowling} />
+              </>
+            ) : (
+              <>
+                <BattingSection title={`${opponentName} Batting`} entries={result.opponentScorecard} />
+                <BowlingSection title={`${userTeamName} Bowling`} entries={result.userBowling} />
+                <BattingSection title={`${userTeamName} Batting`} entries={result.userScorecard} />
+                <BowlingSection title={`${opponentName} Bowling`} entries={result.opponentBowling} />
+              </>
+            )}
           </div>
-        </div>
-      )}
+        )}
     </div>
   );
 };

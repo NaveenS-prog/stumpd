@@ -19,13 +19,10 @@ export interface NewGlobalLeaderboardEntry {
   teamName: string;
   creatorName?: string;
   mode: string;
-  totalScore: number;
-  grade: string;
+  playerIds: string[];
+  captainId: string;
   matchesWon: number;
   totalMatches: number;
-  captainName: string;
-  synergiesCount: number;
-  isInvincible: boolean;
 }
 
 function normalizeSupabaseUrl(url?: string): string {
@@ -134,52 +131,28 @@ export async function fetchGlobalLeaderboard(
 export async function submitToGlobalLeaderboard(
   entry: NewGlobalLeaderboardEntry
 ): Promise<{ data: GlobalLeaderboardEntry | null; error: Error | null }> {
-  const client = getSupabaseClient();
-  if (!client) {
-    return { data: null, error: new Error('Supabase is not configured') };
-  }
-
   try {
-    const payload = {
-      team_name: entry.teamName,
-      creator_name: entry.creatorName || null,
-      mode: entry.mode,
-      total_score: entry.totalScore,
-      grade: entry.grade,
-      matches_won: entry.matchesWon,
-      total_matches: entry.totalMatches,
-      captain_name: entry.captainName,
-      synergies_count: entry.synergiesCount,
-      is_invincible: entry.isInvincible,
-    };
+    const res = await fetch('/api/submit-score', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(entry),
+    });
 
-    const { data, error } = await client
-      .from('universal_leaderboard')
-      .insert(payload)
-      .select()
-      .single();
-
-    if (error) {
-      return { data: null, error: new Error(error.message) };
+    if (!res.ok) {
+      let message = `Request failed (${res.status})`;
+      try {
+        const errBody = (await res.json()) as { error?: string };
+        if (errBody?.error) {
+          message = errBody.error;
+        }
+      } catch {
+        // Ignore JSON parse errors on non-JSON error responses
+      }
+      return { data: null, error: new Error(message) };
     }
 
-    const row = data as DbLeaderboardRow;
-    const mapped: GlobalLeaderboardEntry = {
-      id: row.id,
-      teamName: row.team_name,
-      creatorName: row.creator_name || undefined,
-      mode: row.mode,
-      totalScore: row.total_score,
-      grade: row.grade,
-      matchesWon: row.matches_won,
-      totalMatches: row.total_matches,
-      captainName: row.captain_name,
-      synergiesCount: row.synergies_count,
-      isInvincible: row.is_invincible,
-      createdAt: row.created_at,
-    };
-
-    return { data: mapped, error: null };
+    const data = (await res.json()) as GlobalLeaderboardEntry;
+    return { data, error: null };
   } catch (err) {
     return {
       data: null,

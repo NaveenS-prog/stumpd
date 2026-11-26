@@ -29,6 +29,7 @@ describe('Supabase Service', () => {
 
   afterEach(() => {
     vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
   });
 
   it('determines configuration status dynamically from env', () => {
@@ -103,46 +104,85 @@ describe('Supabase Service', () => {
     expect(mockLimit).toHaveBeenCalledWith(10);
   });
 
-  it('handles successful score submission with mocked client', async () => {
-    const mockSingle = vi.fn().mockResolvedValue({
-      data: {
-        id: 'mock-new-id',
-        team_name: 'Test XI',
-        creator_name: 'Coach Test',
-        mode: 'Standard',
-        total_score: 850,
-        grade: 'S',
-        matches_won: 5,
-        total_matches: 7,
-        captain_name: 'Test Captain',
-        synergies_count: 2,
-        is_invincible: false,
-        created_at: '2026-11-23T12:00:00Z',
-      },
-      error: null,
-    });
-    const mockSelectReturn = vi.fn().mockReturnValue({
-      single: mockSingle,
-    });
-    mockInsert.mockReturnValue({
-      select: mockSelectReturn,
-    });
-
-    const { data, error } = await submitToGlobalLeaderboard({
+  it('submits score via POST /api/submit-score with playerIds and captainId', async () => {
+    const mockEntry = {
+      id: 'mock-new-id',
       teamName: 'Test XI',
       creatorName: 'Coach Test',
-      mode: 'Standard',
+      mode: 'International',
       totalScore: 850,
       grade: 'S',
       matchesWon: 5,
-      totalMatches: 7,
+      totalMatches: 6,
       captainName: 'Test Captain',
       synergiesCount: 2,
       isInvincible: false,
-    });
+      createdAt: '2026-11-23T12:00:00Z',
+    };
+    const mockFetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify(mockEntry), {
+        status: 201,
+        headers: { 'content-type': 'application/json' },
+      })
+    );
+    vi.stubGlobal('fetch', mockFetch);
 
+    const payload = {
+      teamName: 'Test XI',
+      creatorName: 'Coach Test',
+      mode: 'International',
+      playerIds: ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8', 'p9', 'p10', 'p11'],
+      captainId: 'p1',
+      matchesWon: 5,
+      totalMatches: 6,
+    };
+
+    const { data, error } = await submitToGlobalLeaderboard(payload);
+
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(mockFetch).toHaveBeenCalledWith('/api/submit-score', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
     expect(error).toBeNull();
-    expect(data?.teamName).toBe('Test XI');
-    expect(data?.totalScore).toBe(850);
+    expect(data).toEqual(mockEntry);
+  });
+
+  it('returns { data: null, error } when /api/submit-score returns 429 or 500', async () => {
+    const payload = {
+      teamName: 'Test XI',
+      mode: 'IPL',
+      playerIds: ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8', 'p9', 'p10', 'p11'],
+      captainId: 'p1',
+      matchesWon: 7,
+      totalMatches: 7,
+    };
+
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ error: 'Rate limit exceeded. Please try again in a few minutes.' }),
+          { status: 429, headers: { 'content-type': 'application/json' } }
+        )
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ error: 'Failed to save leaderboard entry' }), {
+          status: 500,
+          headers: { 'content-type': 'application/json' },
+        })
+      );
+    vi.stubGlobal('fetch', mockFetch);
+
+    const rateLimited = await submitToGlobalLeaderboard(payload);
+    expect(rateLimited.data).toBeNull();
+    expect(rateLimited.error?.message).toBe(
+      'Rate limit exceeded. Please try again in a few minutes.'
+    );
+
+    const serverError = await submitToGlobalLeaderboard(payload);
+    expect(serverError.data).toBeNull();
+    expect(serverError.error?.message).toBe('Failed to save leaderboard entry');
   });
 });

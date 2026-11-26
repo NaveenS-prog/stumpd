@@ -55,6 +55,7 @@ export default function App() {
 
   const [isReorderModalOpen, setIsReorderModalOpen] = useState(false);
   const [isScoreboardOpen, setIsScoreboardOpen] = useState(false);
+  const [scoreboardHighlightId, setScoreboardHighlightId] = useState<string | null>(null);
 
   useEffect(() => {
     initAudioUnlock();
@@ -104,7 +105,10 @@ export default function App() {
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               type="button"
-              onClick={() => setIsScoreboardOpen(true)}
+              onClick={() => {
+                setScoreboardHighlightId(null);
+                setIsScoreboardOpen(true);
+              }}
               className="py-1.5 px-2.5 sm:px-3 rounded-lg bg-[#12261E] hover:bg-[#1A382C] border border-gold-400/40 text-xs font-mono text-gold-300 hover:text-gold-200 transition-all flex items-center gap-1 shrink-0"
             >
               <span>🏆</span>
@@ -280,6 +284,10 @@ export default function App() {
             opponents={activeOpponents}
             gameMode={gameMode}
             onPlayAgain={resetGame}
+            onOpenScoreboard={(id) => {
+              setScoreboardHighlightId(id ?? null);
+              setIsScoreboardOpen(true);
+            }}
           />
         )}
       </main>
@@ -287,6 +295,7 @@ export default function App() {
       <UniversalScoreboardModal
         isOpen={isScoreboardOpen}
         onClose={() => setIsScoreboardOpen(false)}
+        highlightEntryId={scoreboardHighlightId}
       />
 
       {/* Footer */}

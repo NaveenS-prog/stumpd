@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Player } from '../../types/player';
 import { MatchResult, OpponentTeam } from '../../types/tournament';
 import { TrophyHero } from './TrophyHero';
@@ -17,6 +17,7 @@ interface ResultsScreenProps {
   opponents: OpponentTeam[];
   gameMode: string;
   onPlayAgain: () => void;
+  onOpenScoreboard?: (highlightEntryId?: string) => void;
 }
 
 export const ResultsScreen: React.FC<ResultsScreenProps> = ({
@@ -26,6 +27,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
   opponents,
   gameMode,
   onPlayAgain,
+  onOpenScoreboard,
 }) => {
   const [shareStatus, setShareStatus] = useState<'idle' | 'shared' | 'copied'>('idle');
   const [isScoreboardOpen, setIsScoreboardOpen] = useState(false);
@@ -34,9 +36,17 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
   const [isSaved, setIsSaved] = useState(false);
   const [savedRank, setSavedRank] = useState<number | null>(null);
   const [isGlobalSynced, setIsGlobalSynced] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSyncingCloud, setIsSyncingCloud] = useState(false);
+  const [globalSyncError, setGlobalSyncError] = useState<string | null>(null);
+  const [savedLocalId, setSavedLocalId] = useState<string | null>(null);
+  const [savedGlobalId, setSavedGlobalId] = useState<string | null>(null);
+  const submitLockRef = useRef(false);
+  const syncInFlightRef = useRef(false);
 
   const winsCount = matchResults.filter((r) => r.won).length;
   const totalMatches = matchResults.length;
+  const isEligibleForGlobal = gameMode !== 'Practice Mode' && winsCount >= 1;
   const isChampion = winsCount === totalMatches && totalMatches > 0;
   const isFinalist = !isChampion && winsCount >= 4;
   const isNearMiss = !isChampion && winsCount >= totalMatches - 2 && winsCount < totalMatches && totalMatches >= 5;
@@ -56,48 +66,99 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
     });
   }, []);
 
-  const handleSaveToLeaderboard = (e: React.FormEvent) => {
-    e.preventDefault();
-    const finalTeamName = teamName.trim() || `${gameMode} XI`;
-    const isInvincible = winsCount === totalMatches && totalMatches >= 7;
-    const captain = userXI.find((p) => p.id === captainId);
+  const syncToCloud = async (
+    overrideTeamName?: string,
+    overrideCreatorName?: string
+  ) => {
+    if (
+      !isEligibleForGlobal ||
+      !isSupabaseConfigured() ||
+      isGlobalSynced ||
+      syncInFlightRef.current
+    ) {
+      return;
+    }
+    syncInFlightRef.current = true;
 
-    const savedEntry = saveToUniversalLeaderboard({
-      teamName: finalTeamName,
-      creatorName: creatorName.trim() || undefined,
-      mode: gameMode,
-      totalScore: teamScore.totalScore,
-      grade: teamScore.grade,
-      matchesWon: winsCount,
-      totalMatches: totalMatches,
-      captainName: captain?.name || 'Unassigned',
-      date: new Date().toLocaleDateString(),
-      synergiesCount: Math.round(teamScore.synergyPoints / 30),
-      isInvincible,
-    });
+    const finalTeamName = overrideTeamName ?? (teamName.trim() || `${gameMode} XI`);
+    const trimmedCreator =
+      overrideCreatorName !== undefined ? overrideCreatorName : creatorName.trim() || undefined;
 
-    const leaderboard = getUniversalLeaderboard();
-    const rank = leaderboard.findIndex((entry) => entry.id === savedEntry.id) + 1;
-    setSavedRank(rank > 0 ? rank : 1);
-    setIsSaved(true);
-
-    if (isSupabaseConfigured()) {
-      submitToGlobalLeaderboard({
+    setIsSyncingCloud(true);
+    setGlobalSyncError(null);
+    try {
+      const { data, error } = await submitToGlobalLeaderboard({
         teamName: finalTeamName,
-        creatorName: creatorName.trim() || undefined,
+        creatorName: trimmedCreator,
+        mode: gameMode,
+        playerIds: userXI.map((p) => p.id),
+        captainId: captainId || userXI[0]?.id || '',
+        matchesWon: winsCount,
+        totalMatches,
+      });
+
+      if (error || !data) {
+        setGlobalSyncError(error?.message || 'Failed to sync score to global leaderboard');
+      } else {
+        setIsGlobalSynced(true);
+        setSavedGlobalId(data.id);
+      }
+    } catch (err) {
+      setGlobalSyncError(
+        err instanceof Error ? err.message : 'Failed to sync score to global leaderboard'
+      );
+    } finally {
+      syncInFlightRef.current = false;
+      setIsSyncingCloud(false);
+    }
+  };
+
+  const handleSaveToLeaderboard = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isSubmitting || isSaved || submitLockRef.current) return;
+    submitLockRef.current = true;
+    setIsSubmitting(true);
+
+    try {
+      const finalTeamName = teamName.trim() || `${gameMode} XI`;
+      const trimmedCreator = creatorName.trim() || undefined;
+      const isInvincible = winsCount === totalMatches && totalMatches >= 7;
+      const captain = userXI.find((p) => p.id === captainId);
+
+      const savedEntry = saveToUniversalLeaderboard({
+        teamName: finalTeamName,
+        creatorName: trimmedCreator,
         mode: gameMode,
         totalScore: teamScore.totalScore,
         grade: teamScore.grade,
         matchesWon: winsCount,
         totalMatches: totalMatches,
         captainName: captain?.name || 'Unassigned',
+        date: new Date().toLocaleDateString(),
         synergiesCount: Math.round(teamScore.synergyPoints / 30),
         isInvincible,
-      }).then(({ error }) => {
-        if (!error) {
-          setIsGlobalSynced(true);
-        }
       });
+
+      const leaderboard = getUniversalLeaderboard();
+      const rank = leaderboard.findIndex((entry) => entry.id === savedEntry.id) + 1;
+      setSavedLocalId(savedEntry.id);
+      setSavedRank(rank > 0 ? rank : 1);
+      setIsSaved(true);
+
+      if (isEligibleForGlobal && isSupabaseConfigured()) {
+        await syncToCloud(finalTeamName, trimmedCreator);
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleOpenScoreboard = () => {
+    const highlightId = savedGlobalId || savedLocalId || undefined;
+    if (onOpenScoreboard) {
+      onOpenScoreboard(highlightId);
+    } else {
+      setIsScoreboardOpen(true);
     }
   };
 
@@ -196,7 +257,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
 
           <button
             type="button"
-            onClick={() => setIsScoreboardOpen(true)}
+            onClick={handleOpenScoreboard}
             className="w-full sm:w-auto shrink-0 px-4 sm:px-5 py-3 rounded-xl bg-gold-400 hover:bg-gold-300 text-turf-950 font-black text-xs uppercase tracking-wider transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 min-h-[44px]"
           >
             <span>🏆 Universal Scoreboard</span>
@@ -249,6 +310,12 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
               {isSaved
                 ? isGlobalSynced
                   ? 'Saved to local browser database and published live to Universal Leaderboard!'
+                  : !isEligibleForGlobal
+                  ? 'Saved in local-only mode — Practice Mode and 0-win runs are stored on your device only.'
+                  : isSyncingCloud
+                  ? 'Saved locally! Syncing your verified squad to the Global Leaderboard...'
+                  : globalSyncError
+                  ? 'Saved to local browser database, but cloud sync failed. Retry below.'
                   : 'Saved to local browser database! Visible across refreshes.'
                 : 'Give your drafted lineup a custom team name to rank it on the Universal Scoreboard.'}
             </p>
@@ -256,30 +323,52 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
         </div>
 
         {isSaved ? (
-          <div className="bg-turf-950/80 border border-gold-400/40 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 mb-1 flex-wrap">
-                <span className="text-emerald-400 font-bold font-mono text-sm">
-                  {isGlobalSynced ? '✓ Saved & Published to Global 🌍' : '✓ Saved to Database!'}
-                </span>
-                <span className="bg-gold-400 text-black text-[10px] font-black font-mono px-2 py-0.5 rounded uppercase">
-                  Rank #{savedRank}
-                </span>
+          <div className="bg-turf-950/80 border border-gold-400/40 rounded-2xl p-4 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                  <span className="text-emerald-400 font-bold font-mono text-sm">
+                    {isGlobalSynced
+                      ? '✓ Saved & Published to Global 🌍'
+                      : isSyncingCloud
+                      ? '✓ Saved Locally • ⏳ Syncing to Global...'
+                      : '✓ Saved to Database!'}
+                  </span>
+                  <span className="bg-gold-400 text-black text-[10px] font-black font-mono px-2 py-0.5 rounded uppercase">
+                    Rank #{savedRank}
+                  </span>
+                </div>
+                <p className="text-xs text-turf-200 font-mono">
+                  Team: <span className="text-white font-bold">{teamName.trim() || `${gameMode} XI`}</span>
+                  {creatorName.trim() ? ` • Manager: ${creatorName.trim()}` : ''} • Score: <span className="text-gold-400 font-bold">{teamScore.totalScore} Pts</span> (Grade {teamScore.grade})
+                </p>
               </div>
-              <p className="text-xs text-turf-200 font-mono">
-                Team: <span className="text-white font-bold">{teamName.trim() || `${gameMode} XI`}</span>
-                {creatorName.trim() ? ` • Manager: ${creatorName.trim()}` : ''} • Score: <span className="text-gold-400 font-bold">{teamScore.totalScore} Pts</span> (Grade {teamScore.grade})
-              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleOpenScoreboard}
+                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-gold-400 hover:bg-gold-300 text-black font-black text-xs uppercase tracking-wider font-mono transition-all shadow-md flex items-center justify-center gap-1.5 min-h-[44px]"
+                >
+                  <span>🏆 View Scoreboard</span>
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setIsScoreboardOpen(true)}
-                className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-gold-400 hover:bg-gold-300 text-black font-black text-xs uppercase tracking-wider font-mono transition-all shadow-md flex items-center justify-center gap-1.5 min-h-[44px]"
-              >
-                <span>🏆 View Scoreboard</span>
-              </button>
-            </div>
+
+            {globalSyncError && (
+              <div className="bg-red-950/50 border border-red-500/40 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <span className="text-xs font-mono text-red-300">
+                  ⚠️ Cloud sync error: {globalSyncError}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => syncToCloud()}
+                  disabled={isSyncingCloud}
+                  className="shrink-0 px-3.5 py-2 rounded-lg bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-mono font-bold text-xs uppercase tracking-wider transition-all"
+                >
+                  {isSyncingCloud ? '⏳ Retrying...' : '🔄 Retry Cloud Sync'}
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           <form onSubmit={handleSaveToLeaderboard} className="space-y-4">
@@ -315,24 +404,29 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
 
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
               <span className="text-[11px] text-turf-400 font-mono">
-                Persisted in local database • Ranks by composite 0–1000 score
+                {isEligibleForGlobal
+                  ? 'Persisted in local database • Ranks by composite 0–1000 score'
+                  : 'Local-only mode: Practice Mode & 0-win runs are saved on this device only'}
               </span>
               <button
                 type="submit"
-                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gold-400 hover:bg-gold-300 text-turf-950 font-black text-xs uppercase tracking-wider font-mono transition-all shadow-lg active:scale-95 flex items-center justify-center gap-1.5 min-h-[44px]"
+                disabled={isSubmitting || isSaved}
+                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gold-400 hover:bg-gold-300 disabled:opacity-50 text-turf-950 font-black text-xs uppercase tracking-wider font-mono transition-all shadow-lg active:scale-95 flex items-center justify-center gap-1.5 min-h-[44px]"
               >
-                <span>💾 Save XI to Scoreboard</span>
+                <span>{isSubmitting ? '⏳ Saving...' : '💾 Save XI to Scoreboard'}</span>
               </button>
             </div>
           </form>
         )}
       </div>
 
-      <UniversalScoreboardModal
-        isOpen={isScoreboardOpen}
-        onClose={() => setIsScoreboardOpen(false)}
-        currentUserScore={teamScore.totalScore}
-      />
+      {!onOpenScoreboard && (
+        <UniversalScoreboardModal
+          isOpen={isScoreboardOpen}
+          onClose={() => setIsScoreboardOpen(false)}
+          highlightEntryId={savedGlobalId || savedLocalId}
+        />
+      )}
 
       {/* Share Actions Bar */}
       <div className="bg-turf-900 border border-turf-700 rounded-xl sm:rounded-2xl p-4 mb-6 sm:mb-8 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
